@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="DreamHiring 招聘平台 V1.0 交互原型">
+  <title>DreamHiring · 招聘平台原型</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-spark" viewBox="0 0 24 24">
+      <path d="M12 2.8l1.4 5.2a5 5 0 0 0 3.8 3.8l3.3.9-3.3.9a5 5 0 0 0-3.8 3.8L12 22.6l-1.4-5.2a5 5 0 0 0-3.8-3.8l-3.3-.9 3.3-.9a5 5 0 0 0 3.8-3.8L12 2.8z"/>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path d="M3.7 10.2L12 3.6l8.3 6.6v9.1a1.7 1.7 0 0 1-1.7 1.7H5.4a1.7 1.7 0 0 1-1.7-1.7v-9.1z"/>
+      <path d="M9.2 21v-6.4h5.6V21"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="10.8" cy="10.8" r="6.8"/>
+      <path d="M16 16l4.4 4.4"/>
+    </symbol>
+    <symbol id="i-briefcase" viewBox="0 0 24 24">
+      <rect x="3" y="7" width="18" height="13" rx="2.2"/>
+      <path d="M8.3 7V5.2c0-1 .8-1.8 1.8-1.8h3.8c1 0 1.8.8 1.8 1.8V7M3 12.3c5.5 2.4 12.5 2.4 18 0M10 13.8h4"/>
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24">
+      <path d="M6 2.8h7l5 5v13.4H6z"/>
+      <path d="M13 2.8v5h5M9 12h6M9 15.5h6M9 8.8h2"/>
+    </symbol>
+    <symbol id="i-send" viewBox="0 0 24 24">
+      <path d="M21.2 2.8L10.5 13.5M21.2 2.8l-6.1 18.4-4.6-7.7-7.7-4.6 18.4-6.1z"/>
+    </symbol>
+    <symbol id="i-message" viewBox="0 0 24 24">
+      <path d="M20.5 11.4c0 4.7-3.8 8.5-8.5 8.5-1.5 0-2.9-.4-4.1-1.1L3 20l1.2-4.7a8.5 8.5 0 1 1 16.3-3.9z"/>
+      <path d="M8 11.5h.1M12 11.5h.1M16 11.5h.1"/>
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24">
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>
+    </symbol>
+    <symbol id="i-company" viewBox="0 0 24 24">
+      <path d="M4 21V5.8L13 2v19M13 8h7v13M7.5 8h2M7.5 11.5h2M7.5 15h2M16 11.5h1.5M16 15h1.5M2 21h20"/>
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24">
+      <circle cx="9" cy="8" r="3.2"/>
+      <path d="M2.8 20v-1.8A5.2 5.2 0 0 1 8 13h2a5.2 5.2 0 0 1 5.2 5.2V20M16 5.2a3 3 0 0 1 0 5.7M17.5 13.2a4.7 4.7 0 0 1 3.7 4.6V20"/>
+    </symbol>
+    <symbol id="i-user" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="3.7"/>
+      <path d="M4.8 21v-1.8a5.8 5.8 0 0 1 5.8-5.8h2.8a5.8 5.8 0 0 1 5.8 5.8V21"/>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path d="M12 2.7l8 3.1v5.7c0 5-3.2 8.5-8 9.8-4.8-1.3-8-4.8-8-9.8V5.8l8-3.1z"/>
+      <path d="M8.5 12.1l2.3 2.3 4.7-5"/>
+    </symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/>
+    </symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24">
+      <path d="M8 10l4 4 4-4"/>
+    </symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24">
+      <path d="M9 5l7 7-7 7"/>
+    </symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24">
+      <path d="M18 9a6 6 0 0 0-12 0c0 7-2.5 7-2.5 7h17S18 16 18 9zM10 20h4"/>
+    </symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24">
+      <path d="M5 12h14M14 7l5 5-5 5"/>
+    </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24">
+      <path d="M20 10c0 5.2-8 11-8 11S4 15.2 4 10a8 8 0 1 1 16 0z"/>
+      <circle cx="12" cy="10" r="2.5"/>
+    </symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M8.4 8.2h7.2M8.4 11.2h7.2M12 8.2v8.5M9 16.7h6"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5.3l3.3 2"/>
+    </symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="16" rx="2"/>
+      <path d="M7 2.5v5M17 2.5v5M3 10h18"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="M4.5 12.5l5 5L20 6.8"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 4v16M4 12h16"/>
+    </symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24">
+      <path d="M3 5h18l-7 8v6l-4 2v-8L3 5z"/>
+    </symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24">
+      <path d="M6 3h12v18l-6-4-6 4V3z"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24">
+      <path d="M12 16V3M7 8l5-5 5 5M4 16v4h16v-4"/>
+    </symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24">
+      <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/>
+      <circle cx="12" cy="12" r="2.4"/>
+    </symbol>
+    <symbol id="i-more" viewBox="0 0 24 24">
+      <circle cx="5" cy="12" r="1"/>
+      <circle cx="12" cy="12" r="1"/>
+      <circle cx="19" cy="12" r="1"/>
+    </symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24">
+      <path d="M10 4H4v16h6M14 8l4 4-4 4M8 12h10"/>
+    </symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24">
+      <path d="M4 7h16M4 12h16M4 17h16"/>
+    </symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </symbol>
+    <symbol id="i-graduation" viewBox="0 0 24 24">
+      <path d="M2.8 9.2L12 4l9.2 5.2L12 14.5 2.8 9.2z"/>
+      <path d="M6.3 11.5v4.7c2.7 2.5 8.7 2.5 11.4 0v-4.7M21 9.5v5.7"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 24 24">
+      <path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3z"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path d="M12 3v13M7 11l5 5 5-5M4 21h16"/>
+    </symbol>
+    <symbol id="i-link" viewBox="0 0 24 24">
+      <path d="M9.5 14.5l5-5M7.2 16.8l-1 1a3.5 3.5 0 0 1-5-5l3.3-3.3a3.5 3.5 0 0 1 5 0M16.8 7.2l1-1a3.5 3.5 0 0 1 5 5l-3.3 3.3a3.5 3.5 0 0 1-5 0"/>
+    </symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24">
+      <path d="M3 17l6-6 4 4 8-9M16 6h5v5"/>
+    </symbol>
+    <symbol id="i-magic" viewBox="0 0 24 24">
+      <path d="M4 20L17 7M14 4l1-2 1 2 2 1-2 1-1 2-1-2-2-1 2-1zM20 11l.7-1.3.8 1.3 1.4.7-1.4.8-.8 1.4-.7-1.4-1.4-.8 1.4-.7zM6 3l.6-1 .6 1 1 .6-1 .6L6.6 5 6 4.2 5 3.6 6 3z"/>
+    </symbol>
+  </svg>
+
+  <div id="app" aria-live="polite"></div>
+  <div id="modal-root"></div>
+  <div id="toast-region" class="toast-region" aria-live="assertive" aria-atomic="true"></div>
+  <noscript>此原型需要启用 JavaScript 才能体验完整交互。</noscript>
+  <script src="./app.js"></script>
+</body>
+</html>
