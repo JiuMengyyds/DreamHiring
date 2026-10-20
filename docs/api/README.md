@@ -69,7 +69,9 @@ Content-Type: application/json
 ### 2.3 类型约定
 
 - 主键统一为 `int64` 数字，不使用字符串 ID。
-- 日期时间使用 ISO 8601，例如 `2026-10-20T12:30:00+08:00`。
+- 日期时间统一使用 `yyyy-MM-dd HH:mm:ss`，例如 `2026-10-20 12:30:00`。
+- 时区固定为 GMT+8（Asia/Shanghai），接口入参、响应、日志、消息、领域事件和数据库读写全链路保持一致。
+- 仅日期字段使用 `yyyy-MM-dd`，不得与日期时间字段混用格式。
 - 金额统一使用月薪 `K`，例如 `25` 表示 `25K/月`。
 - 技能标签、福利标签等列表字段统一使用 JSON 字符串数组。
 - 密码字段只允许写入，任何响应都不得返回密码或密码摘要。
@@ -104,7 +106,7 @@ Content-Type: application/json
 
 | 编号 | Method | Path | 说明 | 权限 | operationId |
 |---|---|---|---|---|---|
-| FILE-01 | POST | `/api/files` | 上传简历附件、作品集、Logo 或头像 | 全部登录角色 | `fileUpload` |
+| FILE-01 | POST | `/api/files` | 上传简历附件、作品集、Logo 或头像到 OSS | 全部登录角色 | `fileUpload` |
 | JOB-01 | GET | `/api/jobs` | 职位多条件检索 | PUBLIC / SEEKER | `jobSearch` |
 | JOB-02 | GET | `/api/jobs/hot` | 获取热门职位 | PUBLIC / SEEKER | `jobHot` |
 | JOB-03 | GET | `/api/jobs/{jobId}` | 获取职位详情 | PUBLIC / SEEKER | `jobDetail` |
@@ -259,9 +261,15 @@ matchScore = round(matchedWeight / totalJobWeight × 100)
 
 - 允许格式：`pdf`、`png`、`jpg`、`jpeg`、`webp`。
 - 单文件上限：10MB。
-- 服务端生成唯一文件名，原始文件名仅用于展示。
+- 所有文件统一存储到 OSS 对象存储，本地磁盘不承担文件持久化职责。
+- 后端接收文件后生成唯一 `objectKey`，原始文件名仅用于展示。
+- 数据库只保存 `objectKey`，不保存可能过期的临时签名 URL。
+- 简历附件使用私有读权限，读取时返回短期签名 URL，并在响应中给出 `urlExpiresAt`。
+- 企业 Logo 和头像可使用公开 Bucket 路径或 CDN 地址，`urlExpiresAt` 返回 `null`。
+- 建议对象键格式：`resume/{userId}/{yyyy}/{MM}/{uuid}.pdf`、`company/{companyId}/logo/{uuid}.webp`、`avatar/{userId}/{uuid}.webp`。
 - 禁止直接信任客户端 `Content-Type`，必须读取文件头校验。
-- V1.0 存储在可配置本地目录，通过 `/files/**` 静态映射访问。
+- OSS Endpoint、Bucket、访问密钥等通过环境变量或外部配置注入，禁止写入仓库。
+- 替换附件、删除简历或清理账号时，应同步删除不再被业务数据引用的 OSS 对象。
 
 ### 6.3 热门职位
 
@@ -275,7 +283,7 @@ matchScore = round(matchedWeight / totalJobWeight × 100)
 - 密码使用 BCrypt 加密。
 - 验证码保存在 Redis，TTL 120 秒且只允许使用一次。
 - 所有写接口必须记录操作人、资源 ID、动作和结果。
-- 上传目录禁止执行脚本，静态文件访问不得暴露真实磁盘路径。
+- OSS 私有对象禁止匿名读取，临时签名 URL 需设置较短有效期；公开资源与私有资源使用不同访问策略。
 - 文件、简历、投递、企业资料和管理接口均需做资源归属校验。
 
 ## 7. 错误响应
@@ -408,4 +416,4 @@ node .\docs\api\generate-openapi.mjs
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\docs\api\tests\run-tests.ps1
 ```
 
-契约测试会检查 OpenAPI 版本、64 个操作、全部 `$ref`、角色声明、核心状态枚举、统一响应结构，以及 Markdown 与 OpenAPI 的 operationId 是否一致。
+契约测试会检查 OpenAPI 版本、64 个操作、全部 `$ref`、角色声明、核心状态枚举、统一响应结构、GMT+8 日期时间格式、OSS 对象字段，以及 Markdown 与 OpenAPI 的 operationId 是否一致。

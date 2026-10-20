@@ -49,12 +49,16 @@ test("OpenAPI 文件与生成器输出一致且结构有效", () => {
   assert.equal(openApi.openapi, "3.0.3");
   assert.equal(openApi.info.version, "1.0.0");
   assert.match(openApi.info.title, /DreamHiring/);
+  assert.equal(openApi.info["x-date-time-format"], "yyyy-MM-dd HH:mm:ss");
+  assert.equal(openApi.info["x-timezone"], "GMT+8");
   assert.deepEqual(openApi, buildOpenApi(), "openapi.json 已过期，请重新运行生成器");
 
   assert.equal(openApi.servers[0].url, "http://localhost:8080");
   assert.ok(openApi.components.securitySchemes.bearerAuth);
   assert.ok(openApi.components.schemas.ApiResult);
   assert.ok(openApi.components.schemas.ErrorResult);
+  assert.ok(!openApiSource.includes('"format": "date-time"'), "日期时间不得使用 RFC 3339 date-time");
+  assert.ok(!openApiSource.includes("T12:30:00"), "日期时间示例不得使用 T 分隔符");
 });
 
 test("接口数量、operationId 与基础响应满足契约", () => {
@@ -186,6 +190,17 @@ test("核心业务路径与关键 Schema 完整", () => {
     "INTERVIEW",
     "REJECTED",
   ]);
+
+  const fileData = openApi.components.schemas.FileData;
+  assert.ok(fileData.required.includes("objectKey"));
+  assert.ok(fileData.required.includes("visibility"));
+  assert.deepEqual(fileData.properties.visibility.enum, ["PRIVATE", "PUBLIC"]);
+  assert.match(fileData.properties.objectKey.description, /OSS/);
+  assert.equal(fileData.properties.urlExpiresAt.pattern, "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$");
+
+  const resume = openApi.components.schemas.Resume;
+  assert.ok(resume.properties.attachmentObjectKey, "简历附件应持久化 OSS objectKey");
+  assert.match(resume.properties.attachmentUrl.description, /短期签名/);
 });
 
 test("Markdown 文档覆盖全部接口与核心规则", () => {
@@ -202,4 +217,10 @@ test("Markdown 文档覆盖全部接口与核心规则", () => {
   assert.match(readme, /JWT 默认有效期 2 小时/);
   assert.match(readme, /验证码保存在 Redis/);
   assert.match(readme, /64 个操作/);
+  assert.match(readme, /yyyy-MM-dd HH:mm:ss/);
+  assert.match(readme, /时区固定为 GMT\+8/);
+  assert.match(readme, /OSS 对象存储/);
+  assert.match(readme, /数据库只保存 `objectKey`/);
+  assert.doesNotMatch(readme, /可配置本地目录/);
+  assert.doesNotMatch(readme, /\/files\/\*\*/);
 });

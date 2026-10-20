@@ -6,7 +6,9 @@
     "description": "DreamHiring V1.0 前后端接口契约。所有接口统一返回 Result<T>，分页统一返回 PageVO<T>。本规范覆盖求职者、企业和管理员三角色核心业务闭环。",
     "contact": {
       "name": "DreamHiring 开发组"
-    }
+    },
+    "x-date-time-format": "yyyy-MM-dd HH:mm:ss",
+    "x-timezone": "GMT+8"
   },
   "servers": [
     {
@@ -21,7 +23,7 @@
     },
     {
       "name": "文件",
-      "description": "简历附件、企业 Logo 等文件上传"
+      "description": "OSS 文件上传、访问地址与对象键"
     },
     {
       "name": "职位与内容",
@@ -458,7 +460,7 @@
           "文件"
         ],
         "summary": "上传文件",
-        "description": "上传简历附件、作品集或企业 Logo。V1.0 支持 PDF、PNG、JPG、WEBP；单文件不超过 10MB。服务端返回可持久化的 URL。",
+        "description": "上传简历附件、作品集、企业 Logo 或头像。V1.0 统一写入 OSS 对象存储，不使用本地磁盘；服务端返回 objectKey 和可访问 URL。简历附件为私有对象并返回短期签名 URL。",
         "operationId": "fileUpload",
         "x-roles": [
           "SEEKER",
@@ -4040,18 +4042,21 @@
             "properties": {
               "createdAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               },
               "updatedAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               },
               "lastLoginAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00",
                 "nullable": true
               }
             }
@@ -4162,28 +4167,45 @@
               "RESUME_ATTACHMENT",
               "COMPANY_LOGO",
               "AVATAR"
-            ]
+            ],
+            "description": "RESUME_ATTACHMENT 写入私有 Bucket 路径；COMPANY_LOGO 与 AVATAR 允许公开读取"
           }
         }
       },
       "FileData": {
         "type": "object",
         "required": [
-          "fileId",
+          "objectKey",
           "url",
+          "visibility",
           "originalName",
           "contentType",
           "size"
         ],
         "properties": {
-          "fileId": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 1
+          "objectKey": {
+            "type": "string",
+            "description": "OSS 对象键，持久化到数据库；禁止持久化临时签名 URL",
+            "example": "resume/10001/2026/10/3f8d9e70-c0b2-4a53-a8e1-34fd3fe906fc.pdf"
           },
           "url": {
             "type": "string",
-            "example": "/files/2026/10/resume-abc123.pdf"
+            "description": "OSS 访问地址；私有对象返回短期签名 URL，公开资源返回 CDN/公开 URL",
+            "example": "https://cdn.example.com/resume/10001/2026/10/3f8d9e70-c0b2-4a53-a8e1-34fd3fe906fc.pdf?Expires=1760953800"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "PRIVATE",
+              "PUBLIC"
+            ]
+          },
+          "urlExpiresAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "私有对象签名 URL 的过期时间；公开资源为 null",
+            "example": "2026-10-20 12:30:00",
+            "nullable": true
           },
           "originalName": {
             "type": "string"
@@ -4525,8 +4547,9 @@
           },
           "updatedAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
           }
         }
       },
@@ -4566,8 +4589,9 @@
               },
               "publishedAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               }
             }
           }
@@ -4776,14 +4800,16 @@
           },
           "publishedAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00",
             "nullable": true
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
           }
         }
       },
@@ -4995,22 +5021,30 @@
           "summary": {
             "type": "string"
           },
+          "attachmentObjectKey": {
+            "type": "string",
+            "nullable": true,
+            "description": "简历附件在 OSS 中的持久化对象键"
+          },
           "attachmentUrl": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "简历附件的短期签名访问 URL，不写入数据库"
           },
           "isDefault": {
             "type": "boolean"
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
           },
           "updatedAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
           }
         }
       },
@@ -5151,13 +5185,15 @@
           },
           "deliveryTime": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
           },
           "handleTime": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00",
             "nullable": true
           },
           "job": {
@@ -5349,13 +5385,15 @@
               },
               "createdAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               },
               "updatedAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               }
             }
           }
@@ -5564,13 +5602,15 @@
               },
               "createdAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               },
               "updatedAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               }
             }
           }
@@ -5784,8 +5824,9 @@
           },
           "createdAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-10-20T12:30:00+08:00"
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
           }
         }
       },
@@ -6183,8 +6224,9 @@
               },
               "updatedAt": {
                 "type": "string",
-                "format": "date-time",
-                "example": "2026-10-20T12:30:00+08:00"
+                "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+                "description": "北京时间，时区固定为 GMT+8",
+                "example": "2026-10-20 12:30:00"
               }
             }
           }

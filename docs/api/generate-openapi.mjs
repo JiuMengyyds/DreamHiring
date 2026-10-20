@@ -97,8 +97,9 @@ const stringArray = {
 
 const timestamp = {
   type: "string",
-  format: "date-time",
-  example: "2026-10-20T12:30:00+08:00",
+  pattern: "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+  description: "北京时间，时区固定为 GMT+8",
+  example: "2026-10-20 12:30:00",
 };
 
 const idSchema = {
@@ -538,15 +539,34 @@ const schemas = {
       scope: {
         type: "string",
         enum: ["RESUME_ATTACHMENT", "COMPANY_LOGO", "AVATAR"],
+        description: "RESUME_ATTACHMENT 写入私有 Bucket 路径；COMPANY_LOGO 与 AVATAR 允许公开读取",
       },
     },
   },
   FileData: {
     type: "object",
-    required: ["fileId", "url", "originalName", "contentType", "size"],
+    required: ["objectKey", "url", "visibility", "originalName", "contentType", "size"],
     properties: {
-      fileId: idSchema,
-      url: { type: "string", example: "/files/2026/10/resume-abc123.pdf" },
+      objectKey: {
+        type: "string",
+        description: "OSS 对象键，持久化到数据库；禁止持久化临时签名 URL",
+        example: "resume/10001/2026/10/3f8d9e70-c0b2-4a53-a8e1-34fd3fe906fc.pdf",
+      },
+      url: {
+        type: "string",
+        description: "OSS 访问地址；私有对象返回短期签名 URL，公开资源返回 CDN/公开 URL",
+        example:
+          "https://cdn.example.com/resume/10001/2026/10/3f8d9e70-c0b2-4a53-a8e1-34fd3fe906fc.pdf?Expires=1760953800",
+      },
+      visibility: {
+        type: "string",
+        enum: ["PRIVATE", "PUBLIC"],
+      },
+      urlExpiresAt: {
+        ...timestamp,
+        nullable: true,
+        description: "私有对象签名 URL 的过期时间；公开资源为 null",
+      },
       originalName: { type: "string" },
       contentType: { type: "string" },
       size: { type: "integer", format: "int64" },
@@ -836,7 +856,16 @@ const schemas = {
       expectSalaryMax: { type: "integer", minimum: 0 },
       skillTags: stringArray,
       summary: { type: "string" },
-      attachmentUrl: { type: "string", nullable: true },
+      attachmentObjectKey: {
+        type: "string",
+        nullable: true,
+        description: "简历附件在 OSS 中的持久化对象键",
+      },
+      attachmentUrl: {
+        type: "string",
+        nullable: true,
+        description: "简历附件的短期签名访问 URL，不写入数据库",
+      },
       isDefault: { type: "boolean" },
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -1262,6 +1291,8 @@ export function buildOpenApi() {
       contact: {
         name: "DreamHiring 开发组",
       },
+      "x-date-time-format": "yyyy-MM-dd HH:mm:ss",
+      "x-timezone": "GMT+8",
     },
     servers: [
       {
@@ -1271,7 +1302,7 @@ export function buildOpenApi() {
     ],
     tags: [
       { name: "认证与账户", description: "验证码、注册登录、当前用户与账号设置" },
-      { name: "文件", description: "简历附件、企业 Logo 等文件上传" },
+      { name: "文件", description: "OSS 文件上传、访问地址与对象键" },
       { name: "职位与内容", description: "公开职位检索、职位详情、分类和公告" },
       { name: "简历", description: "求职者在线简历与附件" },
       { name: "投递", description: "求职者投递与企业候选人处理" },
@@ -1378,7 +1409,7 @@ export function buildOpenApi() {
           operationId: "fileUpload",
           roles: ["SEEKER", "COMPANY", "ADMIN"],
           description:
-            "上传简历附件、作品集或企业 Logo。V1.0 支持 PDF、PNG、JPG、WEBP；单文件不超过 10MB。服务端返回可持久化的 URL。",
+            "上传简历附件、作品集、企业 Logo 或头像。V1.0 统一写入 OSS 对象存储，不使用本地磁盘；服务端返回 objectKey 和可访问 URL。简历附件为私有对象并返回短期签名 URL。",
           requestBody: multipartBody("FileUploadRequest"),
           successSchema: "FileResult",
           successDescription: "上传成功",
