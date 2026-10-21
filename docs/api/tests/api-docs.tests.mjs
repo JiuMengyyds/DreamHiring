@@ -44,6 +44,9 @@ function collectRefs(value, refs = []) {
 }
 
 const operations = collectOperations(openApi);
+const operationsById = new Map(
+  operations.map(({ operation }) => [operation.operationId, operation]),
+);
 
 test("OpenAPI 文件与生成器输出一致且结构有效", () => {
   assert.equal(openApi.openapi, "3.0.3");
@@ -203,6 +206,26 @@ test("核心业务路径与关键 Schema 完整", () => {
   assert.match(resume.properties.attachmentUrl.description, /短期签名/);
 });
 
+test("认证错误、用户删除和分类删除语义明确", () => {
+  const login = operationsById.get("authLogin");
+  assert.match(login.description, /验证码.*400/);
+  assert.match(login.description, /用户名或密码错误.*401/);
+  assert.match(login.description, /不得.*清空表单或跳转登录页/);
+
+  const userDelete = operationsById.get("adminUserDelete");
+  assert.match(userDelete.description, /空账号/);
+  assert.match(userDelete.description, /409/);
+  assert.match(userDelete.description, /不得级联删除/);
+  assert.ok(userDelete.responses["409"], "用户存在业务关联时应返回 409");
+
+  const categoryDelete = operationsById.get("adminCategoryDelete");
+  assert.match(categoryDelete.description, /叶子分类/);
+  assert.match(categoryDelete.description, /409/);
+  assert.match(categoryDelete.description, /不得级联删除子分类/);
+  assert.match(categoryDelete.description, /不得自动迁移或删除职位/);
+  assert.ok(categoryDelete.responses["409"], "分类存在子分类或职位引用时应返回 409");
+});
+
 test("Markdown 文档覆盖全部接口与核心规则", () => {
   for (const { operation } of operations) {
     assert.ok(
@@ -223,4 +246,11 @@ test("Markdown 文档覆盖全部接口与核心规则", () => {
   assert.match(readme, /数据库只保存 `objectKey`/);
   assert.doesNotMatch(readme, /可配置本地目录/);
   assert.doesNotMatch(readme, /\/files\/\*\*/);
+
+  const error400Line = readme.split("\n").find((line) => line.includes("| `400` |"));
+  const error401Line = readme.split("\n").find((line) => line.includes("| `401` |"));
+  assert.match(error400Line, /验证码/);
+  assert.doesNotMatch(error401Line, /验证码/);
+  assert.match(readme, /### 6\.5 删除与数据保留/);
+  assert.match(readme, /仅删除无业务关联的空账号/);
 });

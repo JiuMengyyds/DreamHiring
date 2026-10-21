@@ -434,7 +434,7 @@ const errorResponse = (status, description, example) => ({
 
 const responses = {
   BadRequest: errorResponse(400, "请求参数或格式错误", "请求参数不合法"),
-  Unauthorized: errorResponse(401, "未登录或登录状态已失效", "请先登录或重新登录"),
+  Unauthorized: errorResponse(401, "未登录、登录状态失效或登录凭据错误", "请检查登录信息或重新登录"),
   Forbidden: errorResponse(403, "当前角色无权访问该资源", "无权执行该操作"),
   NotFound: errorResponse(404, "请求的资源不存在", "资源不存在或已删除"),
   Conflict: errorResponse(409, "重复操作或当前状态不允许变更", "当前状态不允许执行该操作"),
@@ -1330,7 +1330,8 @@ export function buildOpenApi() {
           summary: "注册账号",
           operationId: "authRegister",
           roles: ["PUBLIC"],
-          description: "注册求职者或企业账号。管理员账号只能由系统初始化，不开放自助注册。",
+          description:
+            "注册求职者或企业账号。管理员账号只能由系统初始化，不开放自助注册。验证码缺失、过期或错误时返回 400；账号冲突返回 409。",
           requestBody: jsonBody("RegisterRequest"),
           successSchema: "AuthResult",
           successDescription: "注册成功，返回 JWT 和用户信息",
@@ -1343,7 +1344,8 @@ export function buildOpenApi() {
           summary: "账号登录",
           operationId: "authLogin",
           roles: ["PUBLIC"],
-          description: "使用用户名、密码和图形验证码登录。成功后返回有效期 2 小时的 JWT。",
+          description:
+            "使用用户名、密码和图形验证码登录。成功后返回有效期 2 小时的 JWT。验证码缺失、过期或错误时返回 400；用户名或密码错误时返回 401。前端认证接口不得因 401 清空表单或跳转登录页。",
           requestBody: jsonBody("LoginRequest"),
           successSchema: "AuthResult",
           successDescription: "登录成功",
@@ -1865,7 +1867,8 @@ export function buildOpenApi() {
           summary: "管理员删除用户",
           operationId: "adminUserDelete",
           roles: ["ADMIN"],
-          description: "逻辑删除用户。涉及企业或职位数据时需先完成关联处理。",
+          description:
+            "仅允许删除没有简历、投递、企业绑定、消息或其他业务关联数据的空账号。存在任一业务关联时返回 409，管理员应改用禁用账号。不得级联删除简历、投递、消息或企业数据。",
           parameters: [parameterRef("UserId")],
           successSchema: "VoidResult",
           errors: ["unauthorized", "forbidden", "notFound", "conflict", "serverError"],
@@ -1990,7 +1993,8 @@ export function buildOpenApi() {
           summary: "删除职位分类",
           operationId: "adminCategoryDelete",
           roles: ["ADMIN"],
-          description: "删除无子分类且无关联职位的分类。",
+          description:
+            "仅允许删除无子分类且未被任何职位引用的叶子分类。存在子分类或职位引用时返回 409。不得级联删除子分类，也不得自动迁移或删除职位。",
           parameters: [parameterRef("CategoryId")],
           successSchema: "VoidResult",
           errors: ["unauthorized", "forbidden", "notFound", "conflict", "serverError"],

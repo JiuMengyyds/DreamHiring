@@ -33,6 +33,8 @@ Content-Type: application/json
 - 前端角色守卫只用于交互控制，后端必须使用 Spring Security 和 `@PreAuthorize` 再次校验。
 - 账号被禁用后，后端应拒绝该账号已签发 JWT 的后续访问。
 
+前端 Axios 拦截器必须排除 `/api/auth/login`、`/api/auth/register` 和 `/api/auth/captcha`。登录接口的 `401` 表示账号或密码错误，应交给登录表单展示，不能清空 token、刷新页面或跳转登录页。
+
 ## 2. 通用约定
 
 ### 2.1 统一响应 `Result<T>`
@@ -170,7 +172,7 @@ Content-Type: application/json
 | ADMIN-USER-01 | GET | `/api/admin/users` | 查询平台用户 | ADMIN | `adminUserList` |
 | ADMIN-USER-02 | GET | `/api/admin/users/{userId}` | 用户详情 | ADMIN | `adminUserDetail` |
 | ADMIN-USER-03 | PUT | `/api/admin/users/{userId}/status` | 启用或禁用用户 | ADMIN | `adminUserUpdateStatus` |
-| ADMIN-USER-04 | DELETE | `/api/admin/users/{userId}` | 删除用户 | ADMIN | `adminUserDelete` |
+| ADMIN-USER-04 | DELETE | `/api/admin/users/{userId}` | 仅删除无业务关联的空账号 | ADMIN | `adminUserDelete` |
 | ADMIN-COMPANY-01 | GET | `/api/admin/companies` | 查询企业 | ADMIN | `adminCompanyList` |
 | ADMIN-COMPANY-02 | GET | `/api/admin/companies/{companyId}` | 企业详情 | ADMIN | `adminCompanyDetail` |
 | ADMIN-COMPANY-03 | PUT | `/api/admin/companies/{companyId}/audit` | 审核企业资质 | ADMIN | `adminCompanyAudit` |
@@ -179,7 +181,7 @@ Content-Type: application/json
 | ADMIN-JOB-03 | PUT | `/api/admin/jobs/{jobId}/audit` | 审核职位 | ADMIN | `adminJobAudit` |
 | ADMIN-CATEGORY-01 | POST | `/api/admin/job-categories` | 创建职位分类 | ADMIN | `adminCategoryCreate` |
 | ADMIN-CATEGORY-02 | PUT | `/api/admin/job-categories/{categoryId}` | 更新职位分类 | ADMIN | `adminCategoryUpdate` |
-| ADMIN-CATEGORY-03 | DELETE | `/api/admin/job-categories/{categoryId}` | 删除职位分类 | ADMIN | `adminCategoryDelete` |
+| ADMIN-CATEGORY-03 | DELETE | `/api/admin/job-categories/{categoryId}` | 删除未被引用的叶子分类 | ADMIN | `adminCategoryDelete` |
 | ADMIN-ANNOUNCEMENT-01 | GET | `/api/admin/announcements` | 查询全部公告 | ADMIN | `adminAnnouncementList` |
 | ADMIN-ANNOUNCEMENT-02 | POST | `/api/admin/announcements` | 创建公告 | ADMIN | `adminAnnouncementCreate` |
 | ADMIN-ANNOUNCEMENT-03 | PUT | `/api/admin/announcements/{announcementId}` | 更新公告 | ADMIN | `adminAnnouncementUpdate` |
@@ -286,12 +288,30 @@ matchScore = round(matchedWeight / totalJobWeight × 100)
 - OSS 私有对象禁止匿名读取，临时签名 URL 需设置较短有效期；公开资源与私有资源使用不同访问策略。
 - 文件、简历、投递、企业资料和管理接口均需做资源归属校验。
 
+### 6.5 删除与数据保留
+
+#### 用户删除
+
+- `DELETE /api/admin/users/{userId}` 仅用于删除没有任何业务关联的空账号。
+- 用户存在简历、投递、企业绑定、消息或其他业务数据时，统一返回 `409`。
+- 不得级联删除简历、投递、消息或企业数据。
+- 日常账号治理应使用 `PUT /api/admin/users/{userId}/status` 禁用账号，而不是删除。
+- 账号禁用后，现有 JWT 必须失效或拒绝继续访问受保护资源。
+- V1.0 不开放“注销有业务数据账号”的复杂归档与匿名化流程，避免破坏企业侧招聘历史。
+
+#### 分类删除
+
+- 仅允许删除没有子分类、且未被任何职位引用的叶子分类。
+- 存在子分类时返回 `409`，错误语义为 `CATEGORY_HAS_CHILDREN`。
+- 被职位引用时返回 `409`，错误语义为 `CATEGORY_IN_USE`。
+- 不得级联删除子分类，不得自动迁移职位，也不得自动删除关联职位。
+
 ## 7. 错误响应
 
 | HTTP / code | 场景 | 示例 msg |
 |---|---|---|
-| `400` | 参数缺失或格式错误 | `请求参数不合法` |
-| `401` | 未登录、JWT 过期或验证码错误 | `请先登录或重新登录` |
+| `400` | 参数格式错误、验证码缺失/过期/错误 | `验证码无效或已过期` |
+| `401` | 未登录、JWT 过期/无效或账号密码错误 | `请检查登录信息或重新登录` |
 | `403` | 角色或资源归属无权限 | `无权执行该操作` |
 | `404` | 资源不存在或已删除 | `资源不存在或已删除` |
 | `409` | 重复投递、状态非法流转 | `当前状态不允许执行该操作` |

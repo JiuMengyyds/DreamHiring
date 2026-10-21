@@ -99,7 +99,7 @@
           "认证与账户"
         ],
         "summary": "注册账号",
-        "description": "注册求职者或企业账号。管理员账号只能由系统初始化，不开放自助注册。",
+        "description": "注册求职者或企业账号。管理员账号只能由系统初始化，不开放自助注册。验证码缺失、过期或错误时返回 400；账号冲突返回 409。",
         "operationId": "authRegister",
         "x-roles": [
           "PUBLIC"
@@ -151,7 +151,7 @@
           "认证与账户"
         ],
         "summary": "账号登录",
-        "description": "使用用户名、密码和图形验证码登录。成功后返回有效期 2 小时的 JWT。",
+        "description": "使用用户名、密码和图形验证码登录。成功后返回有效期 2 小时的 JWT。验证码缺失、过期或错误时返回 400；用户名或密码错误时返回 401。前端认证接口不得因 401 清空表单或跳转登录页。",
         "operationId": "authLogin",
         "x-roles": [
           "PUBLIC"
@@ -2449,7 +2449,7 @@
           "平台管理"
         ],
         "summary": "管理员删除用户",
-        "description": "逻辑删除用户。涉及企业或职位数据时需先完成关联处理。",
+        "description": "仅允许删除没有简历、投递、企业绑定、消息或其他业务关联数据的空账号。存在任一业务关联时返回 409，管理员应改用禁用账号。不得级联删除简历、投递、消息或企业数据。",
         "operationId": "adminUserDelete",
         "x-roles": [
           "ADMIN"
@@ -3009,7 +3009,7 @@
           "平台管理"
         ],
         "summary": "删除职位分类",
-        "description": "删除无子分类且无关联职位的分类。",
+        "description": "仅允许删除无子分类且未被任何职位引用的叶子分类。存在子分类或职位引用时返回 409。不得级联删除子分类，也不得自动迁移或删除职位。",
         "operationId": "adminCategoryDelete",
         "x-roles": [
           "ADMIN"
@@ -3791,7 +3791,7 @@
         }
       },
       "Unauthorized": {
-        "description": "未登录或登录状态已失效",
+        "description": "未登录、登录状态失效或登录凭据错误",
         "content": {
           "application/json": {
             "schema": {
@@ -3799,7 +3799,7 @@
             },
             "example": {
               "code": 401,
-              "msg": "请先登录或重新登录",
+              "msg": "请检查登录信息或重新登录",
               "data": null
             }
           }
