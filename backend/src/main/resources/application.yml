@@ -4,8 +4,42 @@ server:
 spring:
   application:
     name: dream-hiring
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   profiles:
     active: dev
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.dreamhiring.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+
+app:
+  seed-demo:
+    enabled: ${SEED_DEMO:false}
+  jwt:
+    secret: ${JWT_SECRET:change-this-development-secret-at-least-32-bytes}
+    expiration-seconds: 7200
+  storage:
+    mode: ${STORAGE_MODE:oss}
+  messaging:
+    mode: ${MESSAGING_MODE:rabbit}

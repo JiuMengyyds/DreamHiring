@@ -1,0 +1,13 @@
+# Build and dependency output
+backend/target/
+frontend/node_modules/
+frontend/dist/
+
+# Local secrets
+backend/src/main/resources/application-dev.yml
+
+# Generated analysis and runtime artifacts
+backend/analysis/*-output.sql
+backend/analysis/**/__pycache__/
+erl_crash.dump
+*.log

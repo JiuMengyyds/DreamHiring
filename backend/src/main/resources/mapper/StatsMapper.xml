@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dreamhiring.mapper.StatsMapper">
+    <select id="findLatestStats" resultType="AnalysisStat">
+        SELECT dimension, dim_value, metric, stat_value, source_dataset, stat_date
+        FROM analysis_stat
+        WHERE stat_date = (SELECT MAX(stat_date) FROM analysis_stat)
+        ORDER BY dimension, dim_value
+    </select>
+
+    <select id="findByDimension" resultType="AnalysisStat">
+        SELECT dimension, dim_value, metric, stat_value, source_dataset, stat_date
+        FROM analysis_stat
+        WHERE dimension = #{dimension}
+          AND stat_date = (SELECT MAX(stat_date) FROM analysis_stat)
+        ORDER BY stat_value DESC
+    </select>
+
+    <select id="findHotSkills" resultType="HotSkill">
+        SELECT skill, freq_count, source_dataset, stat_date
+        FROM analysis_hot_skill
+        WHERE stat_date = (SELECT MAX(stat_date) FROM analysis_hot_skill)
+        ORDER BY freq_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countJobs" resultType="int">
+        SELECT COUNT(*) FROM job WHERE deleted = 0
+    </select>
+
+    <select id="averageSalary" resultType="double">
+        SELECT COALESCE(AVG((salary_min + salary_max) / 2.0), 0)
+        FROM job WHERE deleted = 0
+    </select>
+
+    <select id="averageMatchScore" resultType="double">
+        SELECT COALESCE(AVG(match_score), 0)
+        FROM application WHERE deleted = 0
+    </select>
+
+    <select id="countApplications" resultType="int">
+        SELECT COUNT(*) FROM application WHERE deleted = 0
+    </select>
+
+    <select id="findJobCreateTimes" resultType="java.time.LocalDateTime">
+        SELECT create_time FROM job WHERE deleted = 0 ORDER BY create_time
+    </select>
+
+    <select id="findApplicationDeliveryTimes" resultType="java.time.LocalDateTime">
+        SELECT delivery_time FROM application WHERE deleted = 0 ORDER BY delivery_time
+    </select>
+</mapper>

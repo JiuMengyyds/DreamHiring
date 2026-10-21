@@ -17,9 +17,16 @@ spring:
     username: guest
     password: guest
 
-storage:
-  oss:
-    endpoint: https://oss-cn-hangzhou.aliyuncs.com
-    bucket: change-me
-    access-key-id: change-me
-    access-key-secret: change-me
+app:
+  seed-demo:
+    enabled: true
+  messaging:
+    mode: rabbit
+  storage:
+    mode: oss
+    oss:
+      endpoint: https://oss-cn-hangzhou.aliyuncs.com
+      bucket: change-me
+      access-key-id: change-me
+      access-key-secret: change-me
+      signed-url-seconds: 900

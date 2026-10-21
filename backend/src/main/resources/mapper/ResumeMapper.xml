@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dreamhiring.mapper.ResumeMapper">
+    <sql id="columns">
+        id, user_id, name, title, education, experience_years, current_city, expect_city,
+        expect_salary_min, expect_salary_max, skill_tags, summary, attachment_object_key,
+        is_default, create_time, update_time, deleted
+    </sql>
+
+    <select id="findByUserId" resultType="ResumeEntity">
+        SELECT <include refid="columns"/> FROM resume
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY is_default DESC, update_time DESC
+    </select>
+
+    <select id="findById" resultType="ResumeEntity">
+        SELECT <include refid="columns"/> FROM resume WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="findDefaultByUserId" resultType="ResumeEntity">
+        SELECT <include refid="columns"/> FROM resume
+        WHERE user_id = #{userId} AND is_default = 1 AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO resume (
+            user_id, name, title, education, experience_years, current_city, expect_city,
+            expect_salary_min, expect_salary_max, skill_tags, summary, attachment_object_key,
+            is_default, create_time, update_time, deleted
+        ) VALUES (
+            #{userId}, #{name}, #{title}, #{education}, #{experienceYears}, #{currentCity}, #{expectCity},
+            #{expectSalaryMin}, #{expectSalaryMax}, #{skillTags}, #{summary}, #{attachmentObjectKey},
+            #{isDefault}, #{createTime}, #{updateTime}, 0
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE resume
+        SET name = #{name}, title = #{title}, education = #{education},
+            experience_years = #{experienceYears}, current_city = #{currentCity},
+            expect_city = #{expectCity}, expect_salary_min = #{expectSalaryMin},
+            expect_salary_max = #{expectSalaryMax}, skill_tags = #{skillTags},
+            summary = #{summary}, update_time = #{updateTime}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="logicalDelete">
+        UPDATE resume SET deleted = 1, is_default = 0, update_time = #{updateTime}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="resetDefault">
+        UPDATE resume SET is_default = 0, update_time = #{updateTime}
+        WHERE user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="setDefault">
+        UPDATE resume SET is_default = 1, update_time = #{updateTime}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="updateAttachment">
+        UPDATE resume SET attachment_object_key = #{objectKey}, update_time = #{updateTime}
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+</mapper>

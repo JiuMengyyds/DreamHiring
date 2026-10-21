@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dreamhiring.mapper.ApplicationMapper">
+    <sql id="columns">
+        id, resume_id, job_id, user_id, status, match_score, company_remark,
+        delivery_time, handle_time, deleted
+    </sql>
+
+    <select id="countByResumeAndJob" resultType="int">
+        SELECT COUNT(*) FROM application
+        WHERE resume_id = #{resumeId} AND job_id = #{jobId} AND deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO application (
+            resume_id, job_id, user_id, status, match_score, company_remark,
+            delivery_time, handle_time, deleted
+        ) VALUES (
+            #{resumeId}, #{jobId}, #{userId}, #{status}, #{matchScore}, #{companyRemark},
+            #{deliveryTime}, #{handleTime}, 0
+        )
+    </insert>
+
+    <select id="findByUserId" resultType="ApplicationRecord">
+        SELECT <include refid="columns"/> FROM application
+        WHERE user_id = #{userId} AND deleted = 0
+        <if test="status != null and status != ''">AND status = #{status}</if>
+        ORDER BY delivery_time DESC
+    </select>
+
+    <select id="findByCompanyId" resultType="ApplicationRecord">
+        SELECT a.id, a.resume_id, a.job_id, a.user_id, a.status, a.match_score,
+               a.company_remark, a.delivery_time, a.handle_time, a.deleted
+        FROM application a
+        JOIN job j ON j.id = a.job_id
+        JOIN resume r ON r.id = a.resume_id
+        WHERE j.company_id = #{companyId} AND a.deleted = 0
+        <if test="jobId != null">AND a.job_id = #{jobId}</if>
+        <if test="status != null and status != ''">AND a.status = #{status}</if>
+        <if test="keyword != null and keyword != ''">
+            AND (r.name LIKE CONCAT('%', #{keyword}, '%')
+            OR r.skill_tags LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY a.delivery_time DESC
+    </select>
+
+    <select id="findById" resultType="ApplicationRecord">
+        SELECT <include refid="columns"/> FROM application
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <update id="updateStatus">
+        UPDATE application
+        SET status = #{status}, company_remark = #{remark}, handle_time = #{handleTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="updateRemark">
+        UPDATE application SET company_remark = #{remark} WHERE id = #{id} AND deleted = 0
+    </update>
+</mapper>

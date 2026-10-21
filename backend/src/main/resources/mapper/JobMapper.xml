@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dreamhiring.mapper.JobMapper">
+
+    <sql id="columns">
+        id, company_id, category_id, title, city, district, salary_min, salary_max,
+        education, experience, description, duties, requirements, skill_tags, perks,
+        status, audit_status, audit_reason, view_count, publish_time, create_time, update_time, deleted
+    </sql>
+
+    <select id="search" parameterType="com.dreamhiring.dto.JobQuery" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        <where>
+            deleted = 0 AND status = 'PUBLISHED' AND audit_status = 'APPROVED'
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%')
+                OR city LIKE CONCAT('%', #{keyword}, '%')
+                OR skill_tags LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="city != null and city != ''">
+                AND city = #{city}
+            </if>
+            <if test="salaryMin != null">
+                AND salary_max &gt;= #{salaryMin}
+            </if>
+            <if test="salaryMax != null">
+                AND salary_min &lt;= #{salaryMax}
+            </if>
+            <if test="education != null and education != ''">
+                AND education = #{education}
+            </if>
+            <if test="experience != null and experience != ''">
+                AND experience = #{experience}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+        </where>
+        <choose>
+            <when test="sort == 'SALARY_DESC'">ORDER BY salary_max DESC</when>
+            <when test="sort == 'HOT_DESC'">ORDER BY view_count DESC</when>
+            <otherwise>ORDER BY update_time DESC</otherwise>
+        </choose>
+    </select>
+
+    <select id="hot" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        WHERE deleted = 0 AND status = 'PUBLISHED' AND audit_status = 'APPROVED'
+        ORDER BY view_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findPublishedByIds" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        WHERE deleted = 0
+          AND status = 'PUBLISHED'
+          AND audit_status = 'APPROVED'
+          AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findByCompanyId" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        WHERE company_id = #{companyId} AND deleted = 0
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="findAllForAdmin" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        <where>
+            deleted = 0
+            <if test="keyword != null and keyword != ''">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="auditStatus != null and auditStatus != ''">
+                AND audit_status = #{auditStatus}
+            </if>
+        </where>
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="findById" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO job (
+            company_id, category_id, title, city, district, salary_min, salary_max,
+            education, experience, description, duties, requirements, skill_tags, perks,
+            status, audit_status, audit_reason, view_count, publish_time, create_time, update_time, deleted
+        ) VALUES (
+            #{companyId}, #{categoryId}, #{title}, #{city}, #{district}, #{salaryMin}, #{salaryMax},
+            #{education}, #{experience}, #{description}, #{duties}, #{requirements}, #{skillTags}, #{perks},
+            #{status}, #{auditStatus}, #{auditReason}, 0, #{publishTime}, #{createTime}, #{updateTime}, 0
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE job
+        SET category_id = #{categoryId},
+            title = #{title},
+            city = #{city},
+            district = #{district},
+            salary_min = #{salaryMin},
+            salary_max = #{salaryMax},
+            education = #{education},
+            experience = #{experience},
+            description = #{description},
+            duties = #{duties},
+            requirements = #{requirements},
+            skill_tags = #{skillTags},
+            perks = #{perks},
+            audit_status = #{auditStatus},
+            audit_reason = NULL,
+            update_time = #{updateTime}
+        WHERE id = #{id} AND company_id = #{companyId} AND deleted = 0
+    </update>
+
+    <update id="updateStatus">
+        UPDATE job SET status = #{status},
+            publish_time = COALESCE(publish_time, #{publishTime}),
+            update_time = #{updateTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="audit">
+        UPDATE job
+        SET audit_status = #{auditStatus}, audit_reason = #{auditReason}, status = #{status},
+            publish_time = #{publishTime}, update_time = #{updateTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="incrementViewCount">
+        UPDATE job SET view_count = view_count + 1 WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="logicalDelete">
+        UPDATE job SET deleted = 1, update_time = #{updateTime}
+        WHERE id = #{id} AND company_id = #{companyId} AND deleted = 0
+    </update>
+
+    <select id="countByCategoryId" resultType="int">
+        SELECT COUNT(*) FROM job WHERE category_id = #{categoryId} AND deleted = 0
+    </select>
+
+    <select id="countPublishedByCategoryId" resultType="int">
+        SELECT COUNT(*) FROM job
+        WHERE category_id = #{categoryId}
+          AND deleted = 0
+          AND status = 'PUBLISHED'
+          AND audit_status = 'APPROVED'
+    </select>
+</mapper>

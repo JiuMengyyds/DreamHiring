@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dreamhiring.mapper.AnnouncementMapper">
+    <sql id="columns">
+        id, title, summary, content, channel, status, publisher_id, publish_time,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="findPublished" resultType="Announcement">
+        SELECT <include refid="columns"/> FROM announcement
+        WHERE status = 'PUBLISHED' AND deleted = 0
+        ORDER BY publish_time DESC
+    </select>
+
+    <select id="findAll" resultType="Announcement">
+        SELECT <include refid="columns"/> FROM announcement
+        <where>
+            deleted = 0
+            <if test="status != null and status != ''">AND status = #{status}</if>
+            <if test="keyword != null and keyword != ''">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="findById" resultType="Announcement">
+        SELECT <include refid="columns"/> FROM announcement WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO announcement (
+            title, summary, content, channel, status, publisher_id, publish_time,
+            create_time, update_time, deleted
+        ) VALUES (
+            #{title}, #{summary}, #{content}, #{channel}, #{status}, #{publisherId}, #{publishTime},
+            #{createTime}, #{updateTime}, 0
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE announcement
+        SET title = #{title}, summary = #{summary}, content = #{content},
+            channel = #{channel}, status = #{status}, publish_time = #{publishTime},
+            update_time = #{updateTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="logicalDelete">
+        UPDATE announcement SET deleted = 1, update_time = #{updateTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+</mapper>

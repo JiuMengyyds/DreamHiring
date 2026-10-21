@@ -3,6 +3,7 @@ package com.dreamhiring.common;
 import java.io.Serializable;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 /**
@@ -50,6 +51,7 @@ public class Result<T> implements Serializable {
      *
      * @return code 为成功状态码时返回 true
      */
+    @JsonIgnore
     public boolean isSuccess() {
         return code == ResultCode.SUCCESS.getCode();
     }

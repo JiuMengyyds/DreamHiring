@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:dreamhiring-infra;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:test-schema.sql
+      data-locations: classpath:test-data.sql
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      repositories:
+        enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.dreamhiring.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  helper-dialect: h2
+  reasonable: true
+
+app:
+  jwt:
+    secret: dreamhiring-infra-test-secret-at-least-thirty-two-bytes
+    expiration-seconds: 7200
+  storage:
+    mode: stub
+  messaging:
+    mode: rabbit

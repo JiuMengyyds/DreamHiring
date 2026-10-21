@@ -1,5 +1,6 @@
 package com.dreamhiring.common;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,5 +56,13 @@ class ResultTest {
         assertThat(ResultCode.UNPROCESSABLE_ENTITY.getCode()).isEqualTo(422);
         assertThat(ResultCode.TOO_MANY_REQUESTS.getCode()).isEqualTo(429);
         assertThat(ResultCode.INTERNAL_SERVER_ERROR.getCode()).isEqualTo(500);
+    }
+
+    @Test
+    void isSuccessShouldNotLeakIntoJson() throws Exception {
+        String json = new ObjectMapper().writeValueAsString(Result.success("ok"));
+
+        assertThat(json).contains("\"code\":200", "\"msg\"", "\"data\":\"ok\"");
+        assertThat(new ObjectMapper().readTree(json).has("success")).isFalse();
     }
 }

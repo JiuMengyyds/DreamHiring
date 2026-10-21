@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dreamhiring.mapper.OperationLogMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO operation_log (
+            operator_id, resource_type, resource_id, action, result, detail, create_time
+        ) VALUES (
+            #{operatorId}, #{resourceType}, #{resourceId}, #{action}, #{result}, #{detail}, #{createTime}
+        )
+    </insert>
+</mapper>
