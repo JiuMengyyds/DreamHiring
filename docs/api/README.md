@@ -51,7 +51,7 @@ Content-Type: application/json
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
-| `code` | integer | V1.0 成功固定为 `200`；失败使用对应 HTTP 状态码 |
+| `code` | integer | V1.0 成功固定为 `200`；失败使用对应 HTTP 状态码，后端统一由 `ResultCode` 枚举维护 |
 | `msg` | string | 面向展示的结果说明 |
 | `data` | object / array / null | 业务数据 |
 
@@ -323,6 +323,8 @@ matchScore = round(matchedWeight / totalJobWeight × 100)
 | `500` | 未捕获服务端异常 | `系统繁忙，请稍后重试` |
 
 错误响应不返回堆栈、SQL、文件路径或框架内部信息。
+
+后端实现约定：标准 `code` 与默认 `msg` 由 `com.dreamhiring.common.ResultCode` 枚举维护。业务代码不得直接书写状态码字面量；具体业务说明可以作为自定义 `msg` 覆盖默认消息，但不得改变接口约定的标准 `code`。
 
 ## 8. 典型调用示例
 

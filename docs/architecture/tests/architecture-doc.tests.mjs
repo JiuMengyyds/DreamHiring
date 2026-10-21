@@ -49,6 +49,8 @@ test("工程结构与关键技术决策符合 DreamHiring 基线", () => {
     "Spring Security 过滤器链 + JWT",
     "`SecurityContextHolder`",
     "`PageVO<T>`",
+    "`ResultCode`",
+    "禁止直接书写 `200`、`400`、`401`",
     "`yyyy-MM-dd HH:mm:ss`",
     "`ObjectStorageService`",
     "Publisher confirm",

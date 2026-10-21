@@ -1,6 +1,7 @@
 package com.dreamhiring.common;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import lombok.Getter;
 
@@ -21,30 +22,35 @@ public class Result<T> implements Serializable {
     private final String msg;
     private final T data;
 
-    private Result(int code, String msg, T data) {
-        this.code = code;
-        this.msg = msg;
+    private Result(ResultCode resultCode, String msg, T data) {
+        Objects.requireNonNull(resultCode, "resultCode must not be null");
+        this.code = resultCode.getCode();
+        this.msg = msg == null || msg.isBlank() ? resultCode.getDefaultMessage() : msg;
         this.data = data;
     }
 
     public static <T> Result<T> success() {
-        return new Result<>(200, "success", null);
+        return new Result<>(ResultCode.SUCCESS, null, null);
     }
 
     public static <T> Result<T> success(T data) {
-        return new Result<>(200, "success", data);
+        return new Result<>(ResultCode.SUCCESS, null, data);
     }
 
-    public static <T> Result<T> failure(int code, String msg) {
-        return new Result<>(code, msg, null);
+    public static <T> Result<T> failure(ResultCode resultCode) {
+        return new Result<>(resultCode, null, null);
+    }
+
+    public static <T> Result<T> failure(ResultCode resultCode, String msg) {
+        return new Result<>(resultCode, msg, null);
     }
 
     /**
      * 判断请求是否成功。
      *
-     * @return code 为 200 时返回 true
+     * @return code 为成功状态码时返回 true
      */
     public boolean isSuccess() {
-        return code == 200;
+        return code == ResultCode.SUCCESS.getCode();
     }
 }

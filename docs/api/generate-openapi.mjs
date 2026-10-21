@@ -451,7 +451,8 @@ const schemas = {
     properties: {
       code: {
         type: "integer",
-        description: "成功固定为 200；失败使用对应 HTTP 状态码",
+        description:
+          "后端由 ResultCode 枚举统一维护。成功固定为 200；失败使用 400/401/403/404/409/413/422/429/500 等对应 HTTP 状态码。",
         example: 200,
       },
       msg: {

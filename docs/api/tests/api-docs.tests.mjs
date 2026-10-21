@@ -188,6 +188,11 @@ test("核心业务路径与关键 Schema 完整", () => {
 
   assert.deepEqual(openApi.components.schemas.JobPage.required, ["records", "total", "page", "size"]);
   assert.deepEqual(openApi.components.schemas.ApiResult.required, ["code", "msg", "data"]);
+  assert.match(
+    openApi.components.schemas.ApiResult.properties.code.description,
+    /ResultCode/,
+    "OpenAPI 应说明状态码由 ResultCode 枚举统一维护",
+  );
   assert.deepEqual(openApi.components.schemas.ApplicationStatusRequest.properties.status.enum, [
     "VIEWED",
     "INTERVIEW",
