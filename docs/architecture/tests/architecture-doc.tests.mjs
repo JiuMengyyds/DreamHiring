@@ -145,6 +145,19 @@ test("DevelopmentGuide 记录公告 RabbitMQ 通知链路", () => {
   }
 });
 
+test("DevelopmentGuide 记录认证接口限流模块", () => {
+  for (const expected of [
+    "### 认证接口限流",
+    "`RateLimitService`",
+    "验证码 30 次、登录 10 次、注册 5 次",
+    "`Retry-After`",
+    "Redis 异常时回退",
+    "第 11 次为 429",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少认证限流说明：${expected}`);
+  }
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
