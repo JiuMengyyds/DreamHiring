@@ -11,9 +11,17 @@ backend/src/main/resources/application-dev.yml
 backend/analysis/*-output.sql
 **/__pycache__/
 *.py[cod]
-data/raw/
+data/raw/*
+!data/raw/数据分析.csv
 erl_crash.dump
 *.log
 
 # IDE-local state
 .idea/
+
+# Private engineering documents
+docs/architecture/backend-engineering-guidelines.md
+
+# Unused static assets
+frontend/public/icons.svg
+frontend/src/assets/hero.png

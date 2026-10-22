@@ -11,9 +11,11 @@ $nginxRoot = 'E:\develop\tools\nginx\current'
 $testRoot = Join-Path $nginxRoot "temp\dreamhiring-nginx-test-$PID"
 
 try {
-    node (Join-Path $testDir 'deployment.tests.mjs')
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
+    foreach ($testFile in @('deployment.tests.mjs', 'repository-hygiene.tests.mjs')) {
+        node (Join-Path $testDir $testFile)
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
     }
 
     $nginxBinary = Join-Path $nginxRoot 'nginx.exe'
