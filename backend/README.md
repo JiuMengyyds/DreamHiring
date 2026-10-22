@@ -7,7 +7,7 @@
 ## 本地启动
 
 1. 使用 `db/mysql-schema.sql` 创建 `dream_hiring` 数据库和表。
-2. 将 `src/main/resources/application-dev.yml.example` 复制为 `application-dev.yml`。
+2. 按本机基础设施配置 `src/main/resources/application-dev.yml`，该文件不进入 Git。
 3. 填写 MySQL、Redis、RabbitMQ 和 OSS 配置。
 4. 开发环境可保留 `app.seed-demo.enabled=true`，首次启动自动创建演示账号和一个示例职位。
 5. 启动 `com.dreamhiring.DreamHiringApplication`。
@@ -24,6 +24,8 @@
 - `app.storage.mode=stub`：测试环境占位存储。
 - `app.messaging.mode=rabbit`：投递状态通知通过 RabbitMQ。
 - `app.messaging.mode=local`：测试环境直接写消息表。
+
+生产 Profile、环境变量、Nginx、systemd 和可重复发布流程见 [`../deploy/README.md`](../deploy/README.md)。
 
 ## 测试
 

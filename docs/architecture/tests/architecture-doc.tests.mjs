@@ -182,6 +182,41 @@ test("工程规范与开发指南记录天池离线分析约定", () => {
   }
 });
 
+test("工程规范与开发指南记录生产部署基线", () => {
+  for (const expected of [
+    "## 14. 生产配置与部署",
+    "`application-prod.yml`",
+    "`127.0.0.1:8080`",
+    "`app.cors.allowed-origins`",
+    "`deploy/Build-Release.ps1`",
+    "HTTP 到 HTTPS 跳转",
+  ]) {
+    assert.ok(guide.includes(expected), `缺少生产部署规范：${expected}`);
+  }
+
+  for (const expected of [
+    "### 生产配置与 Nginx 部署",
+    "`CorsProperties`",
+    "`DREAMHIRING_JWT_SECRET`",
+    "`deploy/nginx/dreamhiring.conf`",
+    "`deploy/Build-Release.ps1`",
+    "nginx -t",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少生产部署实现说明：${expected}`);
+  }
+
+  const deploymentTests = path.join(projectRoot, "deploy", "tests", "deployment.tests.mjs");
+  const productionConfig = path.join(
+    projectRoot,
+    "backend",
+    "src",
+    "main",
+    "resources",
+    "application-prod.yml",
+  );
+  return Promise.all([access(deploymentTests), access(productionConfig)]);
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];

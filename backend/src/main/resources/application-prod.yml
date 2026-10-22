@@ -1,0 +1,62 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DREAMHIRING_DB_URL}
+    username: ${DREAMHIRING_DB_USERNAME}
+    password: ${DREAMHIRING_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DREAMHIRING_DB_POOL_SIZE:20}
+      minimum-idle: ${DREAMHIRING_DB_MIN_IDLE:5}
+      connection-timeout: 30000
+  data:
+    redis:
+      host: ${DREAMHIRING_REDIS_HOST}
+      port: ${DREAMHIRING_REDIS_PORT:6379}
+      password: ${DREAMHIRING_REDIS_PASSWORD}
+      timeout: 3s
+  rabbitmq:
+    host: ${DREAMHIRING_RABBITMQ_HOST}
+    port: ${DREAMHIRING_RABBITMQ_PORT:5672}
+    username: ${DREAMHIRING_RABBITMQ_USERNAME}
+    password: ${DREAMHIRING_RABBITMQ_PASSWORD}
+    virtual-host: ${DREAMHIRING_RABBITMQ_VHOST:/}
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  address: ${DREAMHIRING_SERVER_ADDRESS:127.0.0.1}
+  port: ${DREAMHIRING_SERVER_PORT:8080}
+  shutdown: graceful
+  compression:
+    enabled: true
+    min-response-size: 1024
+  forward-headers-strategy: native
+
+app:
+  seed-demo:
+    enabled: false
+  cors:
+    allowed-origins: ${DREAMHIRING_CORS_ALLOWED_ORIGINS}
+  jwt:
+    secret: ${DREAMHIRING_JWT_SECRET}
+  messaging:
+    mode: rabbit
+  storage:
+    mode: oss
+    oss:
+      endpoint: ${DREAMHIRING_OSS_ENDPOINT}
+      bucket: ${DREAMHIRING_OSS_BUCKET}
+      access-key-id: ${DREAMHIRING_OSS_ACCESS_KEY_ID}
+      access-key-secret: ${DREAMHIRING_OSS_ACCESS_KEY_SECRET}
+      signed-url-seconds: ${DREAMHIRING_OSS_SIGNED_URL_SECONDS:900}
+  rate-limit:
+    enabled: true
+
+logging:
+  file:
+    name: ${DREAMHIRING_LOG_FILE:/var/log/dreamhiring/backend.log}
+  level:
+    root: INFO
+    com.dreamhiring: INFO

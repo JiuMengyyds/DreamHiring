@@ -40,6 +40,10 @@ src/
 - 真实模式不会显示 Mock 角色切换，三个身份需要使用各自账号登录。
 - 登录页从后端加载图形验证码；验证码失败会刷新，账号密码错误的 401 只展示表单错误，不会触发全局退出跳转。
 
+## 生产构建
+
+`.env.production` 默认关闭 Mock，并通过同源 `/api` 访问后端。完整发布流程见 [`../deploy/README.md`](../deploy/README.md)。
+
 演示账号：
 
 - 求职者：`linzhixia / dreamhiring`
