@@ -104,6 +104,20 @@ test("DevelopmentGuide 为每个后端 Java 类记录完整实现说明", async 
   }
 });
 
+test("DevelopmentGuide 记录前端真实后端联调模块", () => {
+  for (const expected of [
+    "### 前端真实后端联调基础模块",
+    "`VITE_USE_MOCK=false`",
+    "`GET /api/auth/me`",
+    "`dreamhiring:auth-expired`",
+    "登录、注册、验证码接口的 401",
+    "默认简历 ID",
+    "企业认证通过/驳回",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少前端联调模块说明：${expected}`);
+  }
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
