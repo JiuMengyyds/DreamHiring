@@ -9,7 +9,11 @@ backend/src/main/resources/application-dev.yml
 
 # Generated analysis and runtime artifacts
 backend/analysis/*-output.sql
-backend/analysis/**/__pycache__/
+**/__pycache__/
+*.py[cod]
 data/raw/
 erl_crash.dump
 *.log
+
+# IDE-local state
+.idea/
