@@ -163,7 +163,7 @@ test("工程规范与开发指南记录天池离线分析约定", () => {
     "## 13. 离线数据分析线",
     "tianchi.aliyun.com/dataset/163746",
     "不引入英文招聘数据集",
-    "许可证尚未确认",
+    "项目负责人已接受许可证暂不确认的风险",
     "`sampleCount` 表示清洗后的分析样本数",
   ]) {
     assert.ok(guide.includes(expected), `缺少离线分析规范：${expected}`);

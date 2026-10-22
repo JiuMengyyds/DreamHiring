@@ -273,7 +273,8 @@ test("数据大屏使用天池中文数据且明确样本口径与许可证风�
   assert.match(readme, /tianchi\.aliyun\.com\/dataset\/163746/);
   assert.match(readme, /仅使用中文招聘数据/);
   assert.match(readme, /不引入英文招聘数据集/);
-  assert.match(readme, /许可证.*尚未确认/);
+  assert.match(readme, /许可证暂不确认/);
+  assert.match(readme, /项目负责人已接受该风险/);
   assert.match(readme, /原始 CSV 不进入 Git/);
   assert.doesNotMatch(readme, /英文技能数据集/);
 });
