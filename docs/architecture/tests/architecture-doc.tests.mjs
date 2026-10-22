@@ -1,18 +1,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const architectureDir = path.dirname(testDir);
 const docsDir = path.dirname(architectureDir);
+const projectRoot = path.resolve(architectureDir, "..", "..");
 const guidePath = path.join(architectureDir, "backend-engineering-guidelines.md");
 const apiReadmePath = path.join(docsDir, "api", "README.md");
+const developmentGuidePath = path.join(projectRoot, "DevelopmentGuide.md");
+const javaSourceRoot = path.join(projectRoot, "backend", "src", "main", "java");
 
-const [guide, apiReadme] = await Promise.all([
+const [guide, apiReadme, developmentGuide] = await Promise.all([
   readFile(guidePath, "utf8"),
   readFile(apiReadmePath, "utf8"),
+  readFile(developmentGuidePath, "utf8"),
 ]);
 
 test("后端工程规范包含借鉴与禁止照搬边界", () => {
@@ -66,3 +70,31 @@ test("接口文档链接到后端工程规范", async () => {
   );
   await access(guidePath);
 });
+
+test("DevelopmentGuide 为每个后端 Java 类记录实现方式", async () => {
+  const javaFiles = await collectFiles(javaSourceRoot, ".java");
+  const normalizedGuide = developmentGuide.replaceAll("\\", "/");
+
+  assert.ok(javaFiles.length >= 100, `后端 Java 类数量异常：${javaFiles.length}`);
+  for (const javaFile of javaFiles) {
+    const relativePath = path.relative(projectRoot, javaFile).replaceAll("\\", "/");
+    assert.ok(
+      normalizedGuide.includes(`\`${relativePath}\``),
+      `DevelopmentGuide 缺少类实现说明：${relativePath}`,
+    );
+  }
+});
+
+async function collectFiles(directory, suffix) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await collectFiles(entryPath, suffix));
+    } else if (entry.name.endsWith(suffix)) {
+      files.push(entryPath);
+    }
+  }
+  return files;
+}
