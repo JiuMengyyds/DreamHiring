@@ -83,7 +83,11 @@ public class FileService {
     }
 
     public String attachmentUrl(String objectKey) {
-        return storageService.createAccessUrl(objectKey);
+        return storageService.createPrivateAccessUrl(objectKey);
+    }
+
+    public String publicUrl(String objectKey) {
+        return storageService.createPublicUrl(objectKey);
     }
 
     private String detectContentType(byte[] content) {

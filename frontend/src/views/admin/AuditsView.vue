@@ -8,12 +8,20 @@ import { AUDIT_STATUS } from '../../utils/constants.js'
 const list = ref([])
 const loading = ref(false)
 const activeStatus = ref('PENDING')
+const page = ref(1)
+const size = ref(10)
+const total = ref(0)
 
 async function load() {
   loading.value = true
   try {
-    const data = await adminApi.jobs({ page: 1, size: 100 })
+    const data = await adminApi.jobs({
+      auditStatus: activeStatus.value,
+      page: page.value,
+      size: size.value,
+    })
     list.value = data.records
+    total.value = data.total
   } finally {
     loading.value = false
   }
@@ -38,6 +46,11 @@ async function audit(row, status) {
   }
 }
 
+function changeStatus() {
+  page.value = 1
+  load()
+}
+
 onMounted(load)
 </script>
 
@@ -52,7 +65,7 @@ onMounted(load)
     </PageHead>
 
     <div class="filter-bar">
-      <el-radio-group v-model="activeStatus">
+      <el-radio-group v-model="activeStatus" @change="changeStatus">
         <el-radio-button value="PENDING">待审核</el-radio-button>
         <el-radio-button value="APPROVED">已通过</el-radio-button>
         <el-radio-button value="REJECTED">已驳回</el-radio-button>
@@ -60,7 +73,7 @@ onMounted(load)
     </div>
 
     <div class="table-panel" v-loading="loading">
-      <el-table :data="list.filter((item) => item.auditStatus === activeStatus)" style="width: 100%">
+      <el-table :data="list" style="width: 100%">
         <el-table-column prop="title" label="职位名称" min-width="200" />
         <el-table-column prop="city" label="城市" width="120" />
         <el-table-column label="审核状态" width="120">
@@ -77,6 +90,23 @@ onMounted(load)
           </template>
         </el-table-column>
       </el-table>
+      <div class="table-panel__pager">
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="size"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="load"
+        />
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.table-panel__pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+</style>

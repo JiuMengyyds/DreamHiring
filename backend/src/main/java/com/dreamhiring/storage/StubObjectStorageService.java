@@ -29,7 +29,12 @@ public class StubObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public String createAccessUrl(String objectKey) {
+    public String createPrivateAccessUrl(String objectKey) {
+        return createPublicUrl(objectKey);
+    }
+
+    @Override
+    public String createPublicUrl(String objectKey) {
         return objectKey == null || objectKey.isBlank() ? null : "/stub-files/" + objectKey;
     }
 }

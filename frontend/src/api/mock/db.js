@@ -6,7 +6,7 @@ const seeker = {
   phone: '13800006271',
   email: 'zhixia.lin@example.com',
   status: 'ACTIVE',
-  avatarUrl: '',
+  avatarObjectKey: '',
 }
 
 const companyUser = {
@@ -17,7 +17,7 @@ const companyUser = {
   phone: '13800002081',
   email: 'hr@nebula.example',
   status: 'ACTIVE',
-  avatarUrl: '',
+  avatarObjectKey: '',
 }
 
 const adminUser = {
@@ -28,7 +28,7 @@ const adminUser = {
   phone: '13800008080',
   email: 'admin@dreamhiring.example',
   status: 'ACTIVE',
-  avatarUrl: '',
+  avatarObjectKey: '',
 }
 
 const jobs = [
@@ -360,7 +360,7 @@ const companies = [
     industry: '企业服务',
     scale: '500-999人',
     city: '杭州',
-    logoUrl: '',
+    logoObjectKey: '',
     intro: '星云科技专注于企业协同与数字化办公。',
     auditStatus: 'APPROVED',
   },
@@ -371,7 +371,7 @@ const companies = [
     industry: '人工智能',
     scale: '100-499人',
     city: '深圳',
-    logoUrl: '',
+    logoObjectKey: '',
     intro: '专注 AI 工作流产品。',
     auditStatus: 'APPROVED',
   },
@@ -382,7 +382,7 @@ const companies = [
     industry: '交通出行',
     scale: '500-999人',
     city: '杭州',
-    logoUrl: '',
+    logoObjectKey: '',
     intro: '智能出行服务。',
     auditStatus: 'PENDING',
   },

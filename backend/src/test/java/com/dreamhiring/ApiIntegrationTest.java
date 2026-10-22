@@ -89,6 +89,21 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.records.length()").value(2));
 
+        mockMvc.perform(get("/api/jobs")
+                        .queryParam("keyword", "星云")
+                        .queryParam("industry", "企业服务"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(3));
+
+        mockMvc.perform(get("/api/jobs")
+                        .queryParam("categoryId", "1")
+                        .queryParam("page", "0")
+                        .queryParam("size", "500"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.size").value(100))
+                .andExpect(jsonPath("$.data.total").value(3));
+
         mockMvc.perform(get("/api/stats/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.salaryDistribution").isArray())

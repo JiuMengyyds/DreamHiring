@@ -150,14 +150,14 @@ const parameters = {
     name: "page",
     in: "query",
     required: false,
-    description: "页码，从 1 开始",
+    description: "页码，从 1 开始；小于 1 时按 1 处理",
     schema: { type: "integer", minimum: 1, default: 1 },
   },
   Size: {
     name: "size",
     in: "query",
     required: false,
-    description: "每页条数",
+    description: "每页记录数，默认 10；小于 1 时按 1 处理，大于 100 时按 100 处理",
     schema: { type: "integer", minimum: 1, maximum: 100, default: 10 },
   },
   Limit: {
@@ -512,7 +512,16 @@ const schemas = {
         type: "string",
         enum: ["ACTIVE", "DISABLED"],
       },
-      avatarUrl: { type: "string", nullable: true },
+      avatarObjectKey: {
+        type: "string",
+        nullable: true,
+        description: "头像 OSS 对象键，用于后续替换或清理",
+      },
+      avatarUrl: {
+        type: "string",
+        nullable: true,
+        description: "头像公开访问 URL，由对象键动态生成",
+      },
     },
   },
   UserProfile: {
@@ -633,7 +642,11 @@ const schemas = {
       nickname: { type: "string", minLength: 1, maxLength: 50 },
       phone: { type: "string", maxLength: 20, nullable: true },
       email: { type: "string", format: "email", maxLength: 100, nullable: true },
-      avatarUrl: { type: "string", nullable: true },
+      avatarObjectKey: {
+        type: "string",
+        nullable: true,
+        description: "先通过文件上传接口获取 AVATAR 对象键",
+      },
     },
   },
   ChangePasswordRequest: {
@@ -658,7 +671,16 @@ const schemas = {
       industry: { type: "string", example: "企业服务" },
       scale: { type: "string", example: "500-999人" },
       city: { type: "string", example: "杭州" },
-      logoUrl: { type: "string", nullable: true },
+      logoObjectKey: {
+        type: "string",
+        nullable: true,
+        description: "企业 Logo OSS 对象键，用于后续替换或清理",
+      },
+      logoUrl: {
+        type: "string",
+        nullable: true,
+        description: "企业 Logo 公开访问 URL，由对象键动态生成",
+      },
       auditStatus: {
         type: "string",
         enum: ["PENDING", "APPROVED", "REJECTED"],
@@ -1016,7 +1038,11 @@ const schemas = {
       industry: { type: "string", minLength: 1, maxLength: 50 },
       scale: { type: "string", maxLength: 30 },
       city: { type: "string", maxLength: 50 },
-      logoUrl: { type: "string", nullable: true },
+      logoObjectKey: {
+        type: "string",
+        nullable: true,
+        description: "先通过文件上传接口获取 COMPANY_LOGO 对象键",
+      },
       intro: { type: "string", minLength: 20, maxLength: 5000 },
       contactName: { type: "string", maxLength: 50 },
       contactPhone: { type: "string", maxLength: 20 },

@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.dto.ApplicationRequests.CreateRequest;
@@ -111,12 +112,13 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public PageVO<ApplicationView> mine(String status, int page, int size) {
         SecurityPrincipal principal = AuthServiceImpl.requirePrincipal();
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<ApplicationRecord> applications = (Page<ApplicationRecord>) applicationMapper.findByUserId(principal.id(), status);
         List<ApplicationView> records = applications.stream()
                 .map(application -> toView(application, jobMapper.findById(application.getJobId())))
                 .toList();
-        return PageVO.of(records, applications.getTotal(), page, size);
+        return PageVO.of(records, applications.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -132,13 +134,14 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     public PageVO<ApplicationDetailView> companyList(Long jobId, String status, String keyword, int page, int size) {
         Long companyId = currentCompanyId();
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<ApplicationRecord> applications =
                 (Page<ApplicationRecord>) applicationMapper.findByCompanyId(companyId, jobId, status, keyword);
         List<ApplicationDetailView> records = applications.stream()
                 .map(application -> toDetail(application, companyId))
                 .toList();
-        return PageVO.of(records, applications.getTotal(), page, size);
+        return PageVO.of(records, applications.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -257,7 +260,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 job.getId(),
                 job.getCompanyId(),
                 company == null ? "" : company.getName(),
-                company == null ? null : company.getLogoUrl(),
+                company == null ? null : fileService.publicUrl(company.getLogoObjectKey()),
                 job.getTitle(),
                 job.getCity(),
                 job.getDistrict(),
@@ -312,7 +315,8 @@ public class ApplicationServiceImpl implements ApplicationService {
                 user.getStatus(),
                 user.getPhone(),
                 user.getEmail(),
-                user.getAvatarUrl()
+                user.getAvatarObjectKey(),
+                fileService.publicUrl(user.getAvatarObjectKey())
         );
     }
 

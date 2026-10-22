@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.dto.JobQuery;
@@ -14,6 +15,7 @@ import com.dreamhiring.mapper.JobMapper;
 import com.dreamhiring.mapper.ResumeMapper;
 import com.dreamhiring.security.SecurityPrincipal;
 import com.dreamhiring.security.UserRole;
+import com.dreamhiring.service.FileService;
 import com.dreamhiring.service.HotJobCacheService;
 import com.dreamhiring.service.JobService;
 import com.dreamhiring.util.SkillTagUtils;
@@ -42,31 +44,35 @@ public class JobServiceImpl implements JobService {
     private final JobCategoryMapper categoryMapper;
     private final ResumeMapper resumeMapper;
     private final HotJobCacheService hotJobCacheService;
+    private final FileService fileService;
 
     public JobServiceImpl(
             JobMapper jobMapper,
             CompanyMapper companyMapper,
             JobCategoryMapper categoryMapper,
             ResumeMapper resumeMapper,
-            HotJobCacheService hotJobCacheService
+            HotJobCacheService hotJobCacheService,
+            FileService fileService
     ) {
         this.jobMapper = jobMapper;
         this.companyMapper = companyMapper;
         this.categoryMapper = categoryMapper;
         this.resumeMapper = resumeMapper;
         this.hotJobCacheService = hotJobCacheService;
+        this.fileService = fileService;
     }
 
     @Override
     public PageVO<JobSummary> search(JobQuery query, int page, int size) {
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<JobEntity> jobs = (Page<JobEntity>) jobMapper.search(query);
         ResumeEntity resume = currentSeekerResume();
         Map<Long, CompanyEntity> companies = loadCompanies(jobs);
         List<JobSummary> records = jobs.stream()
                 .map(job -> toSummary(job, companies.get(job.getCompanyId()), resume))
                 .toList();
-        return PageVO.of(records, jobs.getTotal(), page, size);
+        return PageVO.of(records, jobs.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -100,7 +106,7 @@ public class JobServiceImpl implements JobService {
                 job.getId(),
                 job.getCompanyId(),
                 company == null ? "" : company.getName(),
-                company == null ? null : company.getLogoUrl(),
+                company == null ? null : fileService.publicUrl(company.getLogoObjectKey()),
                 job.getTitle(),
                 job.getCity(),
                 job.getDistrict(),
@@ -180,7 +186,7 @@ public class JobServiceImpl implements JobService {
                 job.getId(),
                 job.getCompanyId(),
                 company == null ? "" : company.getName(),
-                company == null ? null : company.getLogoUrl(),
+                company == null ? null : fileService.publicUrl(company.getLogoObjectKey()),
                 job.getTitle(),
                 job.getCity(),
                 job.getDistrict(),
@@ -208,7 +214,8 @@ public class JobServiceImpl implements JobService {
                 company.getIndustry(),
                 company.getScale(),
                 company.getCity(),
-                company.getLogoUrl(),
+                company.getLogoObjectKey(),
+                fileService.publicUrl(company.getLogoObjectKey()),
                 company.getAuditStatus()
         );
     }

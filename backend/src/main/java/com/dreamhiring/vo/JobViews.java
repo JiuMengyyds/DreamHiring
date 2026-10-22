@@ -19,6 +19,7 @@ public final class JobViews {
             String industry,
             String scale,
             String city,
+            String logoObjectKey,
             String logoUrl,
             CompanyAuditStatus auditStatus
     ) {

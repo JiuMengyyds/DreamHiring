@@ -20,7 +20,7 @@ public class CompanyEntity {
     private String industry;
     private String scale;
     private String city;
-    private String logoUrl;
+    private String logoObjectKey;
     private String intro;
     private String contactName;
     private String contactPhone;

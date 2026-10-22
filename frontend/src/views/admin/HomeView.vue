@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHead from '../../components/PageHead.vue'
 import StatCard from '../../components/StatCard.vue'
@@ -8,11 +8,24 @@ import { adminApi } from '../../api/index.js'
 const router = useRouter()
 const jobs = ref([])
 const pending = ref(0)
+const metrics = reactive({
+  users: 0,
+  approvedCompanies: 0,
+  publishedJobs: 0,
+})
 
 async function load() {
-  const data = await adminApi.jobs({ page: 1, size: 100 })
-  jobs.value = data.records
-  pending.value = jobs.value.filter((item) => item.auditStatus === 'PENDING').length
+  const [users, companies, publishedJobs, pendingJobs] = await Promise.all([
+    adminApi.users({ page: 1, size: 1 }),
+    adminApi.companies({ auditStatus: 'APPROVED', page: 1, size: 1 }),
+    adminApi.jobs({ status: 'PUBLISHED', page: 1, size: 1 }),
+    adminApi.jobs({ auditStatus: 'PENDING', page: 1, size: 5 }),
+  ])
+  metrics.users = users.total
+  metrics.approvedCompanies = companies.total
+  metrics.publishedJobs = publishedJobs.total
+  jobs.value = pendingJobs.records
+  pending.value = pendingJobs.total
 }
 
 onMounted(load)
@@ -30,10 +43,10 @@ onMounted(load)
     </PageHead>
 
     <section class="metric-grid" style="margin-bottom: 16px">
-      <StatCard label="平台注册用户" value="12,846" foot="本周新增 286 人" />
-      <StatCard label="已认证企业" value="1,204" foot="认证通过率 97.3%" />
-      <StatCard label="在架职位" value="3,862" foot="较上周增长 8.6%" />
-      <StatCard label="今日投递" value="1,526" foot="较昨日增长 12.4%" />
+      <StatCard label="平台注册用户" :value="metrics.users.toLocaleString()" foot="当前有效账号总数" />
+      <StatCard label="已认证企业" :value="metrics.approvedCompanies.toLocaleString()" foot="审核通过的企业" />
+      <StatCard label="在架职位" :value="metrics.publishedJobs.toLocaleString()" foot="审核通过且正在招聘" />
+      <StatCard label="待审核职位" :value="pending.toLocaleString()" foot="需要管理员处理" />
     </section>
 
     <section class="panel">
@@ -44,7 +57,7 @@ onMounted(load)
         </div>
         <el-button link type="primary" @click="router.push('/admin/audits')">进入审核中心</el-button>
       </div>
-      <el-table :data="jobs.filter((item) => item.auditStatus === 'PENDING')" style="width: 100%">
+      <el-table :data="jobs" style="width: 100%">
         <el-table-column prop="title" label="职位" min-width="200" />
         <el-table-column prop="city" label="城市" width="120" />
         <el-table-column label="薪资" width="120">

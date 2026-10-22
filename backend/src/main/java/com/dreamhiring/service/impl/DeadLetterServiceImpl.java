@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.entity.DeadLetterRecord;
@@ -62,13 +63,12 @@ public class DeadLetterServiceImpl implements DeadLetterService {
 
     @Override
     public PageVO<DeadLetterView> list(DeadLetterStatus status, int page, int size) {
-        int currentPage = Math.max(1, page);
-        int pageSize = Math.max(1, Math.min(size, 100));
-        PageHelper.startPage(currentPage, pageSize);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<DeadLetterRecord> records =
                 (Page<DeadLetterRecord>) deadLetterMapper.findPage(status == null ? null : status.name());
         List<DeadLetterView> views = records.stream().map(this::toView).toList();
-        return PageVO.of(views, records.getTotal(), currentPage, pageSize);
+        return PageVO.of(views, records.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override

@@ -1,21 +1,41 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHead from '../../components/PageHead.vue'
 import StatCard from '../../components/StatCard.vue'
 import JobCard from '../../components/JobCard.vue'
-import { jobApi } from '../../api/index.js'
+import { applicationApi, jobApi, messageApi, resumeApi } from '../../api/index.js'
 import { useAuthStore } from '../../stores/auth.js'
+import { calculateResumeCompletion, countActiveApplications } from '../../utils/dashboard.js'
 
 const router = useRouter()
 const auth = useAuthStore()
 const hotJobs = ref([])
 const loading = ref(false)
+const metrics = reactive({
+  resumeCompletion: 0,
+  availableJobs: 0,
+  activeApplications: 0,
+  interviews: 0,
+  unreadMessages: 0,
+})
 
 async function loadData() {
   loading.value = true
   try {
-    hotJobs.value = await jobApi.hot(4)
+    const [hot, jobsPage, resumes, applications, unread] = await Promise.all([
+      jobApi.hot(4),
+      jobApi.search({ page: 1, size: 1 }),
+      resumeApi.list(),
+      applicationApi.mine({ page: 1, size: 100 }),
+      messageApi.unreadCount(),
+    ])
+    hotJobs.value = hot
+    metrics.availableJobs = jobsPage.total
+    metrics.resumeCompletion = calculateResumeCompletion(resumes[0])
+    metrics.activeApplications = countActiveApplications(applications.records)
+    metrics.interviews = applications.records.filter((item) => item.status === 'INTERVIEW').length
+    metrics.unreadMessages = unread.count
   } finally {
     loading.value = false
   }
@@ -27,7 +47,7 @@ onMounted(loadData)
 <template>
   <div>
     <PageHead
-      eyebrow="2026.10.21 · 求职工作台"
+      eyebrow="JOB SEEKER"
       :title="`早上好，${auth.user?.nickname || '知夏'}`"
       description="继续浏览高匹配职位，向理想工作靠近。"
     >
@@ -44,10 +64,10 @@ onMounted(loadData)
     </section>
 
     <section class="metric-grid" style="margin-bottom: 16px">
-      <StatCard label="简历完整度" value="86%" foot="再补充项目经历" />
-      <StatCard label="高匹配新职位" value="12 个" foot="较昨日新增 4 个" />
-      <StatCard label="进行中的投递" value="3 个" foot="其中 1 个进入面试" />
-      <StatCard label="未读消息" value="2 条" foot="其中 1 条面试邀请" />
+      <StatCard label="简历完整度" :value="`${metrics.resumeCompletion}%`" foot="上传附件可进一步提升完整度" />
+      <StatCard label="当前在招职位" :value="`${metrics.availableJobs} 个`" foot="来自已审核上架职位" />
+      <StatCard label="进行中的投递" :value="`${metrics.activeApplications} 个`" :foot="`其中 ${metrics.interviews} 个进入面试`" />
+      <StatCard label="未读消息" :value="`${metrics.unreadMessages} 条`" foot="面试邀请与状态反馈" />
     </section>
 
     <section class="panel">

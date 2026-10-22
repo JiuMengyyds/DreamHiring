@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.dto.AdminRequests.AnnouncementUpsertRequest;
@@ -27,6 +28,7 @@ import com.dreamhiring.messaging.AnnouncementPublishedEvent;
 import com.dreamhiring.messaging.NotificationGateway;
 import com.dreamhiring.security.SecurityPrincipal;
 import com.dreamhiring.service.AdminService;
+import com.dreamhiring.service.FileService;
 import com.dreamhiring.util.SkillTagUtils;
 import com.dreamhiring.vo.AnnouncementView;
 import com.dreamhiring.vo.AuthViews.UserProfileView;
@@ -54,6 +56,7 @@ public class AdminServiceImpl implements AdminService {
     private final JobCategoryMapper categoryMapper;
     private final AnnouncementMapper announcementMapper;
     private final NotificationGateway notificationGateway;
+    private final FileService fileService;
 
     public AdminServiceImpl(
             UserMapper userMapper,
@@ -64,7 +67,8 @@ public class AdminServiceImpl implements AdminService {
             MessageMapper messageMapper,
             JobCategoryMapper categoryMapper,
             AnnouncementMapper announcementMapper,
-            NotificationGateway notificationGateway
+            NotificationGateway notificationGateway,
+            FileService fileService
     ) {
         this.userMapper = userMapper;
         this.companyMapper = companyMapper;
@@ -75,19 +79,23 @@ public class AdminServiceImpl implements AdminService {
         this.categoryMapper = categoryMapper;
         this.announcementMapper = announcementMapper;
         this.notificationGateway = notificationGateway;
+        this.fileService = fileService;
     }
 
     @Override
     public PageVO<UserProfileView> listUsers(String keyword, String role, String status, int page, int size) {
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<UserAccount> users = (Page<UserAccount>) userMapper.findAll(keyword, role, status);
-        List<UserProfileView> records = users.stream().map(AuthServiceImpl::toProfile).toList();
-        return PageVO.of(records, users.getTotal(), page, size);
+        List<UserProfileView> records = users.stream()
+                .map(user -> AuthServiceImpl.toProfile(user, fileService))
+                .toList();
+        return PageVO.of(records, users.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
     public UserProfileView userDetail(Long userId) {
-        return AuthServiceImpl.toProfile(requireUser(userId));
+        return AuthServiceImpl.toProfile(requireUser(userId), fileService);
     }
 
     @Override
@@ -96,7 +104,7 @@ public class AdminServiceImpl implements AdminService {
         UserAccount user = requireUser(userId);
         userMapper.updateStatus(userId, request.status().name(), LocalDateTime.now());
         user.setStatus(request.status());
-        return AuthServiceImpl.toProfile(user);
+        return AuthServiceImpl.toProfile(user, fileService);
     }
 
     @Override
@@ -115,10 +123,11 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public PageVO<CompanyView> listCompanies(String keyword, String auditStatus, int page, int size) {
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<CompanyEntity> companies = (Page<CompanyEntity>) companyMapper.findAll(keyword, auditStatus);
         List<CompanyView> records = companies.stream().map(this::toCompanyView).toList();
-        return PageVO.of(records, companies.getTotal(), page, size);
+        return PageVO.of(records, companies.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -152,10 +161,11 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public PageVO<CompanyJobView> listJobs(String keyword, String status, String auditStatus, int page, int size) {
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<JobEntity> jobs = (Page<JobEntity>) jobMapper.findAllForAdmin(keyword, status, auditStatus);
         List<CompanyJobView> records = jobs.stream().map(this::toJobView).toList();
-        return PageVO.of(records, jobs.getTotal(), page, size);
+        return PageVO.of(records, jobs.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -244,13 +254,14 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public PageVO<AnnouncementView> listAnnouncements(String keyword, String status, int page, int size) {
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<Announcement> announcements =
                 (Page<Announcement>) announcementMapper.findAll(status, keyword);
         List<AnnouncementView> records = announcements.stream()
                 .map(AnnouncementServiceImpl::toView)
                 .toList();
-        return PageVO.of(records, announcements.getTotal(), page, size);
+        return PageVO.of(records, announcements.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -387,7 +398,8 @@ public class AdminServiceImpl implements AdminService {
                 company.getIndustry(),
                 company.getScale(),
                 company.getCity(),
-                company.getLogoUrl(),
+                company.getLogoObjectKey(),
+                fileService.publicUrl(company.getLogoObjectKey()),
                 company.getIntro(),
                 company.getContactName(),
                 company.getContactPhone(),
@@ -412,7 +424,7 @@ public class AdminServiceImpl implements AdminService {
                 job.getId(),
                 job.getCompanyId(),
                 company == null ? "" : company.getName(),
-                company == null ? null : company.getLogoUrl(),
+                company == null ? null : fileService.publicUrl(company.getLogoObjectKey()),
                 job.getTitle(),
                 job.getCity(),
                 job.getDistrict(),
@@ -451,7 +463,8 @@ public class AdminServiceImpl implements AdminService {
                 company.getIndustry(),
                 company.getScale(),
                 company.getCity(),
-                company.getLogoUrl(),
+                company.getLogoObjectKey(),
+                fileService.publicUrl(company.getLogoObjectKey()),
                 company.getAuditStatus()
         );
     }

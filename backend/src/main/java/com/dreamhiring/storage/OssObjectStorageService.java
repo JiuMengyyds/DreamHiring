@@ -1,12 +1,12 @@
 package com.dreamhiring.storage;
 
 import com.aliyun.oss.OSS;
+import com.aliyun.oss.model.CannedAccessControlList;
 import com.aliyun.oss.model.ObjectMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -42,18 +42,24 @@ public class OssObjectStorageService implements ObjectStorageService {
         );
 
         boolean privateObject = "RESUME_ATTACHMENT".equals(scope);
-        Date expiration = Date.from(LocalDateTime.now()
-                .plusSeconds(properties.getOss().getSignedUrlSeconds())
-                .atZone(BUSINESS_ZONE)
-                .toInstant());
-        URL url = ossClient.generatePresignedUrl(properties.getOss().getBucket(), objectKey, expiration);
+        if (!privateObject) {
+            ossClient.setObjectAcl(
+                    properties.getOss().getBucket(),
+                    objectKey,
+                    CannedAccessControlList.PublicRead
+            );
+        }
+        String url = privateObject
+                ? createPrivateAccessUrl(objectKey)
+                : createPublicUrl(objectKey);
+        LocalDateTime expiresAt = privateObject
+                ? LocalDateTime.now(BUSINESS_ZONE).plusSeconds(properties.getOss().getSignedUrlSeconds())
+                : null;
         return new StoredObject(
                 objectKey,
-                url.toString(),
+                url,
                 privateObject ? "PRIVATE" : "PUBLIC",
-                privateObject
-                        ? LocalDateTime.ofInstant(expiration.toInstant(), BUSINESS_ZONE)
-                        : null
+                expiresAt
         );
     }
 
@@ -65,7 +71,7 @@ public class OssObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public String createAccessUrl(String objectKey) {
+    public String createPrivateAccessUrl(String objectKey) {
         if (objectKey == null || objectKey.isBlank()) {
             return null;
         }
@@ -78,6 +84,21 @@ public class OssObjectStorageService implements ObjectStorageService {
                 objectKey,
                 expiration
         ).toString();
+    }
+
+    @Override
+    public String createPublicUrl(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return null;
+        }
+        String baseUrl = properties.getOss().getPublicBaseUrl();
+        if (baseUrl == null || baseUrl.isBlank()) {
+            String endpoint = properties.getOss().getEndpoint()
+                    .replaceFirst("^https?://", "")
+                    .replaceFirst("/+$", "");
+            baseUrl = "https://" + properties.getOss().getBucket() + "." + endpoint;
+        }
+        return baseUrl.replaceFirst("/+$", "") + "/" + objectKey;
     }
 
     private String buildObjectKey(String scope, Long ownerId, String originalName) {

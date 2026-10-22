@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adminApi, authApi, companyApi, jobApi, messageApi, resumeApi } from '../api/index.js'
+import { adminApi, authApi, companyApi, fileApi, jobApi, messageApi, resumeApi, userApi } from '../api/index.js'
 import { getDefaultResumeId } from '../utils/resume.js'
 
 describe('mock API contract', () => {
@@ -26,6 +26,16 @@ describe('mock API contract', () => {
     const data = await jobApi.search({ city: '杭州', page: 1, size: 10 })
     expect(data.records.every((job) => job.city === '杭州')).toBe(true)
     expect(data.total).toBeGreaterThanOrEqual(2)
+
+    const industryData = await jobApi.search({
+      industry: '企业服务',
+      keyword: '星云',
+      page: 0,
+      size: 500,
+    })
+    expect(industryData.records.every((job) => job.industry === '企业服务')).toBe(true)
+    expect(industryData.page).toBe(1)
+    expect(industryData.size).toBe(100)
   })
 
   it('rejects deleting a user with business data and a referenced category', async () => {
@@ -106,5 +116,47 @@ describe('mock API contract', () => {
     localStorage.setItem('dreamhiring_token', 'mock-token-linzhixia')
     const messages = await messageApi.list({ type: 'ANNOUNCEMENT', page: 1, size: 100 })
     expect(messages.records.some((item) => item.relatedId === announcement.id)).toBe(true)
+  })
+
+  it('persists avatar and company logo object keys while returning public URLs', async () => {
+    localStorage.setItem('dreamhiring_token', 'mock-token-linzhixia')
+    const avatarForm = new FormData()
+    avatarForm.append('scope', 'AVATAR')
+    const avatar = await fileApi.upload(avatarForm)
+    const user = await userApi.updateMe({ avatarObjectKey: avatar.objectKey })
+    expect(user.avatarObjectKey).toBe(avatar.objectKey)
+    expect(user.avatarUrl).toContain('/stub-files/')
+
+    localStorage.setItem('dreamhiring_token', 'mock-token-chenyu_hr')
+    const logoForm = new FormData()
+    logoForm.append('scope', 'COMPANY_LOGO')
+    const logo = await fileApi.upload(logoForm)
+    const company = await companyApi.updateProfile({
+      ...(await companyApi.profile()),
+      logoObjectKey: logo.objectKey,
+    })
+    expect(company.logoObjectKey).toBe(logo.objectKey)
+    expect(company.logoUrl).toContain('/stub-files/')
+  })
+
+  it('updates jobs and categories through the management APIs', async () => {
+    localStorage.setItem('dreamhiring_token', 'mock-token-chenyu_hr')
+    const jobPage = await companyApi.jobs({ page: 1, size: 1 })
+    const job = jobPage.records[0]
+    const updatedJob = await companyApi.updateJob(job.id, {
+      ...job,
+      title: `${job.title}（更新）`,
+    })
+    expect(updatedJob.title).toContain('（更新）')
+    expect(updatedJob.auditStatus).toBe('PENDING')
+
+    localStorage.setItem('dreamhiring_token', 'mock-token-admin_zhou')
+    const category = await adminApi.createCategory({ name: '测试分类', parentId: null, sort: 99 })
+    const updatedCategory = await adminApi.updateCategory(category.id, {
+      name: '测试分类更新',
+      parentId: null,
+      sort: 100,
+    })
+    expect(updatedCategory.name).toBe('测试分类更新')
   })
 })

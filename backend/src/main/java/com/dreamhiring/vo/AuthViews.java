@@ -18,6 +18,7 @@ public final class AuthViews {
             UserStatus status,
             String phone,
             String email,
+            String avatarObjectKey,
             String avatarUrl
     ) {
     }
@@ -30,6 +31,7 @@ public final class AuthViews {
             UserStatus status,
             String phone,
             String email,
+            String avatarObjectKey,
             String avatarUrl,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,

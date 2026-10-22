@@ -11,38 +11,52 @@
     </sql>
 
     <select id="search" parameterType="com.dreamhiring.dto.JobQuery" resultType="JobEntity">
-        SELECT <include refid="columns"/>
-        FROM job
+        SELECT j.id, j.company_id, j.category_id, j.title, j.city, j.district,
+               j.salary_min, j.salary_max, j.education, j.experience,
+               j.description, j.duties, j.requirements, j.skill_tags, j.perks,
+               j.status, j.audit_status, j.audit_reason, j.view_count,
+               j.publish_time, j.create_time, j.update_time, j.deleted
+        FROM job j
+        JOIN company c ON c.id = j.company_id AND c.deleted = 0
         <where>
-            deleted = 0 AND status = 'PUBLISHED' AND audit_status = 'APPROVED'
+            j.deleted = 0 AND j.status = 'PUBLISHED' AND j.audit_status = 'APPROVED'
             <if test="keyword != null and keyword != ''">
-                AND (title LIKE CONCAT('%', #{keyword}, '%')
-                OR city LIKE CONCAT('%', #{keyword}, '%')
-                OR skill_tags LIKE CONCAT('%', #{keyword}, '%'))
+                AND (j.title LIKE CONCAT('%', #{keyword}, '%')
+                OR j.city LIKE CONCAT('%', #{keyword}, '%')
+                OR j.skill_tags LIKE CONCAT('%', #{keyword}, '%')
+                OR c.name LIKE CONCAT('%', #{keyword}, '%')
+                OR c.industry LIKE CONCAT('%', #{keyword}, '%'))
             </if>
             <if test="city != null and city != ''">
-                AND city = #{city}
+                AND j.city = #{city}
             </if>
             <if test="salaryMin != null">
-                AND salary_max &gt;= #{salaryMin}
+                AND j.salary_max &gt;= #{salaryMin}
             </if>
             <if test="salaryMax != null">
-                AND salary_min &lt;= #{salaryMax}
+                AND j.salary_min &lt;= #{salaryMax}
             </if>
             <if test="education != null and education != ''">
-                AND education = #{education}
+                AND j.education = #{education}
             </if>
             <if test="experience != null and experience != ''">
-                AND experience = #{experience}
+                AND j.experience = #{experience}
             </if>
             <if test="categoryId != null">
-                AND category_id = #{categoryId}
+                AND (j.category_id = #{categoryId}
+                OR j.category_id IN (
+                    SELECT child.id FROM job_category child
+                    WHERE child.parent_id = #{categoryId} AND child.deleted = 0
+                ))
+            </if>
+            <if test="industry != null and industry != ''">
+                AND c.industry = #{industry}
             </if>
         </where>
         <choose>
-            <when test="sort == 'SALARY_DESC'">ORDER BY salary_max DESC</when>
-            <when test="sort == 'HOT_DESC'">ORDER BY view_count DESC</when>
-            <otherwise>ORDER BY update_time DESC</otherwise>
+            <when test="sort == 'SALARY_DESC'">ORDER BY j.salary_max DESC</when>
+            <when test="sort == 'HOT_DESC'">ORDER BY j.view_count DESC</when>
+            <otherwise>ORDER BY j.update_time DESC</otherwise>
         </choose>
     </select>
 
@@ -70,6 +84,20 @@
         SELECT <include refid="columns"/>
         FROM job
         WHERE company_id = #{companyId} AND deleted = 0
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="findCompanyJobsPage" resultType="JobEntity">
+        SELECT <include refid="columns"/>
+        FROM job
+        <where>
+            company_id = #{companyId} AND deleted = 0
+            <if test="status != null and status != ''">AND status = #{status}</if>
+            <if test="auditStatus != null and auditStatus != ''">AND audit_status = #{auditStatus}</if>
+            <if test="keyword != null and keyword != ''">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
         ORDER BY update_time DESC
     </select>
 

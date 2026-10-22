@@ -14,6 +14,9 @@ const columns = [
 
 const list = ref([])
 const loading = ref(false)
+const page = ref(1)
+const size = ref(10)
+const total = ref(0)
 
 function group(status) {
   return list.value.filter((item) => item.status === status)
@@ -32,8 +35,9 @@ async function updateStatus(item, status) {
 async function load() {
   loading.value = true
   try {
-    const data = await companyApi.applications({ page: 1, size: 100 })
+    const data = await companyApi.applications({ page: page.value, size: size.value })
     list.value = data.records
+    total.value = data.total
   } finally {
     loading.value = false
   }
@@ -86,5 +90,22 @@ onMounted(load)
         </div>
       </section>
     </div>
+    <div class="candidate-pager">
+      <el-pagination
+        v-model:current-page="page"
+        :page-size="size"
+        :total="total"
+        layout="total, prev, pager, next"
+        @current-change="load"
+      />
+    </div>
   </div>
 </template>
+
+<style scoped>
+.candidate-pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+</style>

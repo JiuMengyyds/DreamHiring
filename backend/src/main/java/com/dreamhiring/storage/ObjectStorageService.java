@@ -8,7 +8,9 @@ public interface ObjectStorageService {
 
     void delete(String objectKey);
 
-    String createAccessUrl(String objectKey);
+    String createPrivateAccessUrl(String objectKey);
+
+    String createPublicUrl(String objectKey);
 
     record StoredObject(
             String objectKey,

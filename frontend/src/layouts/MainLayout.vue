@@ -5,14 +5,17 @@ import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../stores/auth.js'
 import { navByRole } from '../router/nav.js'
 import { ROLE_LABELS, ROLE_HOME } from '../utils/constants.js'
-import { messageApi } from '../api/index.js'
+import { fileApi, messageApi, userApi } from '../api/index.js'
 import { isMockMode } from '../utils/runtime.js'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { user } = storeToRefs(auth)
 const unreadCount = ref(0)
+const avatarInput = ref(null)
+const avatarUploading = ref(false)
 
 const navItems = computed(() => navByRole[auth.role] || [])
 const roleOptions = Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))
@@ -44,6 +47,38 @@ async function loadUnreadCount() {
     unreadCount.value = data.count
   } catch {
     unreadCount.value = 0
+  }
+}
+
+function chooseAvatar() {
+  avatarInput.value?.click()
+}
+
+async function uploadAvatar(event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+    ElMessage.warning('头像仅支持 PNG、JPG 或 WebP')
+    return
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('头像不能超过 10MB')
+    return
+  }
+  avatarUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('scope', 'AVATAR')
+    const uploaded = await fileApi.upload(formData)
+    const updated = await userApi.updateMe({ avatarObjectKey: uploaded.objectKey })
+    auth.updateUser({ ...auth.user, ...updated })
+    ElMessage.success('头像已更新')
+  } catch (error) {
+    ElMessage.error(error.message || '头像上传失败')
+  } finally {
+    avatarUploading.value = false
   }
 }
 
@@ -96,7 +131,9 @@ onMounted(loadUnreadCount)
           <p>当前页面由本地 Mock 数据驱动，可点击切换角色体验完整链路。</p>
         </div>
         <div class="sidebar-user">
-          <el-avatar :size="34">{{ user?.nickname?.slice(0, 1) }}</el-avatar>
+          <button type="button" class="avatar-button" :disabled="avatarUploading" @click="chooseAvatar">
+            <el-avatar :size="34" :src="user?.avatarUrl">{{ user?.nickname?.slice(0, 1) }}</el-avatar>
+          </button>
           <span class="sidebar-user-copy">
             <strong>{{ user?.nickname }}</strong>
             <small>{{ ROLE_LABELS[auth.role] }}</small>
@@ -119,7 +156,9 @@ onMounted(loadUnreadCount)
               <el-icon><Bell /></el-icon>
             </el-button>
           </el-badge>
-          <el-avatar :size="32">{{ user?.nickname?.slice(0, 1) }}</el-avatar>
+          <button type="button" class="avatar-button" :disabled="avatarUploading" @click="chooseAvatar">
+            <el-avatar :size="32" :src="user?.avatarUrl">{{ user?.nickname?.slice(0, 1) }}</el-avatar>
+          </button>
         </div>
       </header>
 
@@ -127,5 +166,26 @@ onMounted(loadUnreadCount)
         <router-view />
       </main>
     </section>
+    <input
+      ref="avatarInput"
+      type="file"
+      accept=".png,.jpg,.jpeg,.webp"
+      hidden
+      @change="uploadAvatar"
+    />
   </div>
 </template>
+
+<style scoped>
+.avatar-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.avatar-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+</style>

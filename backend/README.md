@@ -7,7 +7,7 @@
 ## 本地启动
 
 1. 使用 `db/mysql-schema.sql` 创建 `dream_hiring` 数据库和表。
-   已有数据库升级死信管理时执行 `db/upgrade-dead-letter.sql`。
+   已有数据库升级死信管理时执行 `db/upgrade-dead-letter.sql`；升级媒体对象键时执行 `db/upgrade-media-storage.sql`。
 2. 按本机基础设施配置 `src/main/resources/application-dev.yml`，该文件不进入 Git。
 3. 填写 MySQL、Redis、RabbitMQ 和 OSS 配置。
 4. 开发环境可保留 `app.seed-demo.enabled=true`，首次启动自动创建演示账号和一个示例职位。

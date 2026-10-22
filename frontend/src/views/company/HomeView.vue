@@ -43,9 +43,9 @@ onMounted(load)
 
     <section class="metric-grid" style="margin-bottom: 16px" v-if="dashboard">
       <StatCard label="在招职位" :value="dashboard.activeJobCount" foot="招聘状态正常" />
-      <StatCard label="待查看候选人" :value="dashboard.pendingCandidateCount" foot="平均响应 3.2 小时" />
-      <StatCard label="面试进行中" :value="dashboard.interviewCount" foot="最近一场 · 10 月 22 日" />
-      <StatCard label="候选人平均匹配度" :value="`${dashboard.averageMatchScore}%`" foot="较上月提升 5%" />
+      <StatCard label="待查看候选人" :value="dashboard.pendingCandidateCount" foot="按当前投递状态统计" />
+      <StatCard label="面试进行中" :value="dashboard.interviewCount" foot="当前处于邀面试状态" />
+      <StatCard label="候选人平均匹配度" :value="`${dashboard.averageMatchScore}%`" foot="基于投递时匹配快照" />
     </section>
 
     <div class="detail-layout">

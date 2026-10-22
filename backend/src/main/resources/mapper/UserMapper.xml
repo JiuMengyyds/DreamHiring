@@ -5,7 +5,7 @@
 <mapper namespace="com.dreamhiring.mapper.UserMapper">
 
     <sql id="columns">
-        id, username, password_hash, nickname, role, status, phone, email, avatar_url, last_login_time,
+        id, username, password_hash, nickname, role, status, phone, email, avatar_object_key, last_login_time,
         create_time, update_time, deleted
     </sql>
 
@@ -51,10 +51,10 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sys_user (
-            username, password_hash, nickname, role, status, phone, email, avatar_url, last_login_time,
+            username, password_hash, nickname, role, status, phone, email, avatar_object_key, last_login_time,
             create_time, update_time, deleted
         ) VALUES (
-            #{username}, #{passwordHash}, #{nickname}, #{role}, #{status}, #{phone}, #{email}, #{avatarUrl}, #{lastLoginTime},
+            #{username}, #{passwordHash}, #{nickname}, #{role}, #{status}, #{phone}, #{email}, #{avatarObjectKey}, #{lastLoginTime},
             #{createTime}, #{updateTime}, 0
         )
     </insert>
@@ -64,7 +64,7 @@
         SET nickname = #{nickname},
             phone = #{phone},
             email = #{email},
-            avatar_url = #{avatarUrl},
+            avatar_object_key = #{avatarObjectKey},
             update_time = #{updateTime}
         WHERE id = #{id} AND deleted = 0
     </update>

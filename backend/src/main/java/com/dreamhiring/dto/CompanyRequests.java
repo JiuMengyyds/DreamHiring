@@ -28,7 +28,7 @@ public final class CompanyRequests {
             @NotBlank(message = "城市不能为空")
             @Size(max = 50, message = "城市不能超过 50 个字符")
             String city,
-            String logoUrl,
+            String logoObjectKey,
             @NotBlank(message = "企业简介不能为空")
             @Size(min = 20, max = 5000, message = "企业简介长度必须为 20-5000 个字符")
             String intro,

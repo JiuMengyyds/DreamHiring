@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.entity.MessageRecord;
@@ -27,11 +28,12 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public PageVO<MessageView> list(String type, Boolean read, int page, int size) {
         Long receiverId = currentPrincipal().id();
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<MessageRecord> messages = (Page<MessageRecord>) messageMapper.findByReceiverId(
                 receiverId, type, read == null ? null : (read ? 1 : 0));
         List<MessageView> records = messages.stream().map(this::toView).toList();
-        return PageVO.of(records, messages.getTotal(), page, size);
+        return PageVO.of(records, messages.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override

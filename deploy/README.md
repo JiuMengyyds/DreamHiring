@@ -44,7 +44,7 @@ deploy/releases/dreamhiring-yyyyMMdd-HHmmss/
 
 1. 安装 JDK 21、MySQL 8、Redis、RabbitMQ 和 Nginx。
 2. 创建无登录权限的 `dreamhiring` 系统用户及上述目录。
-3. 首次部署执行 `deploy/db/mysql-schema.sql`；已有数据库升级执行 `deploy/db/upgrade-dead-letter.sql`。
+3. 首次部署执行 `deploy/db/mysql-schema.sql`；已有数据库按版本执行 `deploy/db/upgrade-dead-letter.sql` 和 `deploy/db/upgrade-media-storage.sql`。
 4. 将发布包中的 `frontend/` 上传到 `/srv/dreamhiring/frontend`。
 5. 将 `backend.jar` 上传到 `/opt/dreamhiring/backend.jar`。
 6. 复制 `.env.production.example` 为 `/etc/dreamhiring/dreamhiring.env`，填写真实配置并执行 `chmod 600`。

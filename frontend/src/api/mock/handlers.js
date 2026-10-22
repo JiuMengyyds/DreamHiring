@@ -12,6 +12,9 @@ function fail(code, msg) {
 
 function parseBody(config) {
   if (!config.data) return {}
+  if (config.data instanceof FormData) {
+    return Object.fromEntries(config.data.entries())
+  }
   if (typeof config.data === 'string') {
     try {
       return JSON.parse(config.data)
@@ -63,6 +66,7 @@ function filterJobs(query) {
     if (maxSalary && job.salaryMin > maxSalary) return false
     if (query.education && query.education !== 'UNLIMITED' && job.education !== query.education) return false
     if (query.experience && query.experience !== 'UNLIMITED' && job.experience !== query.experience) return false
+    if (query.industry && job.industry !== query.industry) return false
     return true
   })
 }
@@ -106,7 +110,7 @@ export function handleMockRequest(config) {
       phone: body.phone || '',
       email: body.email || '',
       status: 'ACTIVE',
-      avatarUrl: '',
+      avatarObjectKey: '',
     }
     credentialUsers[body.username] = user
     db.users.push(user)
@@ -118,7 +122,7 @@ export function handleMockRequest(config) {
         industry: '待完善',
         scale: '',
         city: '待完善',
-        logoUrl: '',
+        logoObjectKey: '',
         intro: '企业资料待完善',
         auditStatus: 'PENDING',
         activeJobCount: 0,
@@ -146,6 +150,9 @@ export function handleMockRequest(config) {
     if (method === 'get') return ok(check.user)
     if (method === 'put') {
       Object.assign(check.user, body)
+      if (body.avatarObjectKey !== undefined) {
+        check.user.avatarUrl = body.avatarObjectKey ? `/stub-files/${body.avatarObjectKey}` : ''
+      }
       return ok(check.user)
     }
   }
@@ -153,13 +160,16 @@ export function handleMockRequest(config) {
   if (path === '/api/users/me/password' && method === 'put') return ok()
 
   if (path === '/api/files' && method === 'post') {
+    const scope = body.scope || 'RESUME_ATTACHMENT'
+    const extension = scope === 'RESUME_ATTACHMENT' ? 'pdf' : 'png'
+    const objectKey = `${scope.toLowerCase()}/10001/2026/10/${Date.now()}.${extension}`
     return ok({
-      objectKey: `resume/10001/2026/10/${Date.now()}.pdf`,
-      url: '/files/demo-resume.pdf',
-      visibility: body.scope === 'RESUME_ATTACHMENT' ? 'PRIVATE' : 'PUBLIC',
-      urlExpiresAt: body.scope === 'RESUME_ATTACHMENT' ? '2026-10-21 10:15:00' : null,
-      originalName: 'resume.pdf',
-      contentType: 'application/pdf',
+      objectKey,
+      url: `/stub-files/${objectKey}`,
+      visibility: scope === 'RESUME_ATTACHMENT' ? 'PRIVATE' : 'PUBLIC',
+      urlExpiresAt: scope === 'RESUME_ATTACHMENT' ? '2026-10-21 10:15:00' : null,
+      originalName: `upload.${extension}`,
+      contentType: scope === 'RESUME_ATTACHMENT' ? 'application/pdf' : 'image/png',
       size: 1887436,
     })
   }
@@ -313,6 +323,9 @@ export function handleMockRequest(config) {
     if (method === 'get') return ok(company)
     if (method === 'put') {
       Object.assign(company, body)
+      if (body.logoObjectKey !== undefined) {
+        company.logoUrl = body.logoObjectKey ? `/stub-files/${body.logoObjectKey}` : ''
+      }
       return ok(company)
     }
   }
@@ -320,7 +333,15 @@ export function handleMockRequest(config) {
   if (path === '/api/company/jobs') {
     const check = requireRole(config, ['COMPANY'])
     if (check.error) return check.error
-    if (method === 'get') return ok(paginate(db.companyJobs, query.page, query.size))
+    if (method === 'get') {
+      const filtered = db.companyJobs.filter((job) => {
+        if (query.status && job.status !== query.status) return false
+        if (query.auditStatus && job.auditStatus !== query.auditStatus) return false
+        if (query.keyword && !job.title.includes(query.keyword)) return false
+        return true
+      })
+      return ok(paginate(filtered, query.page, query.size))
+    }
     if (method === 'post') {
       const job = { ...body, id: Date.now(), companyId: 1, status: 'DRAFT', auditStatus: 'PENDING', applicantCount: 0, pendingApplicantCount: 0, updatedAt: now }
       db.companyJobs.unshift(job)
@@ -429,7 +450,10 @@ export function handleMockRequest(config) {
   if (path === '/api/admin/companies' && method === 'get') {
     const check = requireRole(config, ['ADMIN'])
     if (check.error) return check.error
-    return ok(paginate(db.companies, query.page, query.size))
+    const filtered = db.companies.filter((company) =>
+      !query.auditStatus || company.auditStatus === query.auditStatus,
+    )
+    return ok(paginate(filtered, query.page, query.size))
   }
 
   if (path.startsWith('/api/admin/companies/')) {
@@ -450,7 +474,13 @@ export function handleMockRequest(config) {
   if (path === '/api/admin/jobs' && method === 'get') {
     const check = requireRole(config, ['ADMIN'])
     if (check.error) return check.error
-    return ok(paginate(db.companyJobs, query.page, query.size))
+    const filtered = db.companyJobs.filter((job) => {
+      if (query.status && job.status !== query.status) return false
+      if (query.auditStatus && job.auditStatus !== query.auditStatus) return false
+      if (query.keyword && !job.title.includes(query.keyword)) return false
+      return true
+    })
+    return ok(paginate(filtered, query.page, query.size))
   }
 
   if (path.startsWith('/api/admin/jobs/') && method === 'get') {
@@ -474,7 +504,11 @@ export function handleMockRequest(config) {
     const check = requireRole(config, ['ADMIN'])
     if (check.error) return check.error
     const category = { ...body, id: Date.now(), jobCount: 0, children: [] }
-    db.categories.push(category)
+    const parent = body.parentId
+      ? db.categories.find((item) => item.id === Number(body.parentId))
+      : null
+    if (parent) parent.children.push(category)
+    else db.categories.push(category)
     return ok(category)
   }
 
@@ -483,6 +517,7 @@ export function handleMockRequest(config) {
     if (check.error) return check.error
     const id = Number(segment(3))
     const category = db.categories.find((item) => item.id === id)
+      || db.categories.flatMap((item) => item.children || []).find((item) => item.id === id)
     if (!category) return fail(404, '分类不存在或已删除')
     if (method === 'put') {
       Object.assign(category, body)
@@ -491,7 +526,18 @@ export function handleMockRequest(config) {
     if (method === 'delete') {
       if (category.children?.length) return fail(409, '存在子分类，不能删除')
       if (category.jobCount > 0) return fail(409, '该分类已被职位引用，不能删除')
-      db.categories.splice(db.categories.indexOf(category), 1)
+      const rootIndex = db.categories.indexOf(category)
+      if (rootIndex >= 0) {
+        db.categories.splice(rootIndex, 1)
+      } else {
+        for (const root of db.categories) {
+          const childIndex = root.children?.findIndex((item) => item.id === id) ?? -1
+          if (childIndex >= 0) {
+            root.children.splice(childIndex, 1)
+            break
+          }
+        }
+      }
       return ok()
     }
   }

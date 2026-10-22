@@ -19,6 +19,11 @@ public interface JobMapper {
 
     List<JobEntity> findByCompanyId(@Param("companyId") Long companyId);
 
+    List<JobEntity> findCompanyJobsPage(@Param("companyId") Long companyId,
+                                        @Param("status") String status,
+                                        @Param("auditStatus") String auditStatus,
+                                        @Param("keyword") String keyword);
+
     List<JobEntity> findAllForAdmin(@Param("keyword") String keyword,
                                     @Param("status") String status,
                                     @Param("auditStatus") String auditStatus);

@@ -22,6 +22,7 @@ public final class CompanyViews {
             String industry,
             String scale,
             String city,
+            String logoObjectKey,
             String logoUrl,
             String intro,
             String contactName,

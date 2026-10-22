@@ -50,6 +50,7 @@ app:
       bucket: ${DREAMHIRING_OSS_BUCKET}
       access-key-id: ${DREAMHIRING_OSS_ACCESS_KEY_ID}
       access-key-secret: ${DREAMHIRING_OSS_ACCESS_KEY_SECRET}
+      public-base-url: ${DREAMHIRING_OSS_PUBLIC_BASE_URL}
       signed-url-seconds: ${DREAMHIRING_OSS_SIGNED_URL_SECONDS:900}
   rate-limit:
     enabled: true

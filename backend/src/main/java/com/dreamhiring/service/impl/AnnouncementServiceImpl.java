@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.entity.Announcement;
@@ -24,10 +25,11 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     public PageVO<AnnouncementView> listPublished(int page, int size) {
-        PageHelper.startPage(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
         Page<Announcement> announcements = (Page<Announcement>) announcementMapper.findPublished();
         List<AnnouncementView> records = announcements.stream().map(AnnouncementServiceImpl::toView).toList();
-        return PageVO.of(records, announcements.getTotal(), page, size);
+        return PageVO.of(records, announcements.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override

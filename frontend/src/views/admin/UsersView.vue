@@ -7,12 +7,16 @@ import { ROLE_LABELS, USER_STATUS } from '../../utils/constants.js'
 
 const list = ref([])
 const loading = ref(false)
+const page = ref(1)
+const size = ref(10)
+const total = ref(0)
 
 async function load() {
   loading.value = true
   try {
-    const data = await adminApi.users({ page: 1, size: 100 })
+    const data = await adminApi.users({ page: page.value, size: size.value })
     list.value = data.records
+    total.value = data.total
   } finally {
     loading.value = false
   }
@@ -77,6 +81,15 @@ onMounted(load)
           </template>
         </el-table-column>
       </el-table>
+      <div class="table-panel__pager">
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="size"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="load"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -94,5 +107,11 @@ onMounted(load)
 
 .user-cell small {
   color: var(--muted);
+}
+
+.table-panel__pager {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
 }
 </style>

@@ -16,6 +16,7 @@ public class StorageProperties {
         private String bucket;
         private String accessKeyId;
         private String accessKeySecret;
+            private String publicBaseUrl;
         private long signedUrlSeconds = 900;
     }
 }

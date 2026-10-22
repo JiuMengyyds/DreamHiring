@@ -209,6 +209,11 @@ test("核心业务路径与关键 Schema 完整", () => {
   const resume = openApi.components.schemas.Resume;
   assert.ok(resume.properties.attachmentObjectKey, "简历附件应持久化 OSS objectKey");
   assert.match(resume.properties.attachmentUrl.description, /短期签名/);
+
+  assert.ok(openApi.components.schemas.UserSummary.properties.avatarObjectKey);
+  assert.match(openApi.components.schemas.UserSummary.properties.avatarUrl.description, /动态生成/);
+  assert.ok(openApi.components.schemas.CompanySummary.properties.logoObjectKey);
+  assert.match(openApi.components.schemas.CompanySummary.properties.logoUrl.description, /动态生成/);
 });
 
 test("认证错误、用户删除和分类删除语义明确", () => {

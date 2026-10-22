@@ -23,7 +23,7 @@ public class UserAccount {
     private UserStatus status;
     private String phone;
     private String email;
-    private String avatarUrl;
+    private String avatarObjectKey;
     private LocalDateTime lastLoginTime;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

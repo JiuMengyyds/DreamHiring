@@ -54,7 +54,7 @@ public final class AuthRequests {
             @Email(message = "邮箱格式不正确")
             @Size(max = 100, message = "邮箱不能超过 100 个字符")
             String email,
-            String avatarUrl
+            String avatarObjectKey
     ) {
     }
 

@@ -21,6 +21,11 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem(USER_KEY, JSON.stringify(data.user))
       return data.user
     },
+    updateUser(user) {
+      this.user = user
+      localStorage.setItem(USER_KEY, JSON.stringify(user))
+      return user
+    },
     async login(payload) {
       const data = await authApi.login(payload)
       return this.persistAuth(data)

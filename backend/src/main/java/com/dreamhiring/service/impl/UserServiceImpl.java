@@ -7,6 +7,7 @@ import com.dreamhiring.dto.AuthRequests.UpdateProfileRequest;
 import com.dreamhiring.entity.UserAccount;
 import com.dreamhiring.mapper.UserMapper;
 import com.dreamhiring.security.SecurityPrincipal;
+import com.dreamhiring.service.FileService;
 import com.dreamhiring.service.UserService;
 import com.dreamhiring.vo.AuthViews.UserProfileView;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,21 +21,28 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final FileService fileService;
 
-    public UserServiceImpl(UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(
+            UserMapper userMapper,
+            PasswordEncoder passwordEncoder,
+            FileService fileService
+    ) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.fileService = fileService;
     }
 
     @Override
     public UserProfileView getCurrentUser() {
-        return AuthServiceImpl.toProfile(requireCurrentUser());
+        return AuthServiceImpl.toProfile(requireCurrentUser(), fileService);
     }
 
     @Override
     @Transactional
     public UserProfileView updateCurrentUser(UpdateProfileRequest request) {
         UserAccount user = requireCurrentUser();
+        String previousAvatarObjectKey = user.getAvatarObjectKey();
         if (request.nickname() != null) {
             user.setNickname(request.nickname());
         }
@@ -44,12 +52,15 @@ public class UserServiceImpl implements UserService {
         if (request.email() != null) {
             user.setEmail(request.email());
         }
-        if (request.avatarUrl() != null) {
-            user.setAvatarUrl(request.avatarUrl());
+        if (request.avatarObjectKey() != null) {
+            user.setAvatarObjectKey(request.avatarObjectKey());
         }
         user.setUpdateTime(LocalDateTime.now());
         userMapper.updateProfile(user);
-        return AuthServiceImpl.toProfile(user);
+        if (!java.util.Objects.equals(previousAvatarObjectKey, user.getAvatarObjectKey())) {
+            fileService.deleteAfterCommit(previousAvatarObjectKey);
+        }
+        return AuthServiceImpl.toProfile(user, fileService);
     }
 
     @Override

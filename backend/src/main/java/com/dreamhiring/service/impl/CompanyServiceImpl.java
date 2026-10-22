@@ -1,6 +1,7 @@
 package com.dreamhiring.service.impl;
 
 import com.dreamhiring.common.BusinessException;
+import com.dreamhiring.common.PageRequest;
 import com.dreamhiring.common.PageVO;
 import com.dreamhiring.common.ResultCode;
 import com.dreamhiring.dto.CompanyRequests.JobStatusRequest;
@@ -19,6 +20,7 @@ import com.dreamhiring.mapper.JobMapper;
 import com.dreamhiring.security.SecurityPrincipal;
 import com.dreamhiring.service.ApplicationService;
 import com.dreamhiring.service.CompanyService;
+import com.dreamhiring.service.FileService;
 import com.dreamhiring.service.HotJobCacheService;
 import com.dreamhiring.util.SkillTagUtils;
 import com.dreamhiring.vo.ApplicationViews.ApplicationView;
@@ -27,6 +29,8 @@ import com.dreamhiring.vo.CompanyViews.CompanyView;
 import com.dreamhiring.vo.CompanyViews.DashboardView;
 import com.dreamhiring.vo.CompanyViews.Funnel;
 import com.dreamhiring.vo.JobViews.CompanyBrief;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +46,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final ApplicationMapper applicationMapper;
     private final ApplicationService applicationService;
     private final HotJobCacheService hotJobCacheService;
+    private final FileService fileService;
 
     public CompanyServiceImpl(
             CompanyMapper companyMapper,
@@ -49,7 +54,8 @@ public class CompanyServiceImpl implements CompanyService {
             JobCategoryMapper categoryMapper,
             ApplicationMapper applicationMapper,
             ApplicationService applicationService,
-            HotJobCacheService hotJobCacheService
+            HotJobCacheService hotJobCacheService,
+            FileService fileService
     ) {
         this.companyMapper = companyMapper;
         this.jobMapper = jobMapper;
@@ -57,6 +63,7 @@ public class CompanyServiceImpl implements CompanyService {
         this.applicationMapper = applicationMapper;
         this.applicationService = applicationService;
         this.hotJobCacheService = hotJobCacheService;
+        this.fileService = fileService;
     }
 
     @Override
@@ -68,17 +75,21 @@ public class CompanyServiceImpl implements CompanyService {
     @Transactional
     public CompanyView updateProfile(UpdateProfileRequest request) {
         CompanyEntity company = requireCompany();
+        String previousLogoObjectKey = company.getLogoObjectKey();
         company.setName(request.name());
         company.setIndustry(request.industry());
         company.setScale(request.scale());
         company.setCity(request.city());
-        company.setLogoUrl(request.logoUrl());
+        company.setLogoObjectKey(request.logoObjectKey());
         company.setIntro(request.intro());
         company.setContactName(request.contactName());
         company.setContactPhone(request.contactPhone());
         company.setContactEmail(request.contactEmail());
         company.setUpdateTime(LocalDateTime.now());
         companyMapper.update(company);
+        if (!java.util.Objects.equals(previousLogoObjectKey, company.getLogoObjectKey())) {
+            fileService.deleteAfterCommit(previousLogoObjectKey);
+        }
         hotJobCacheService.evict();
         return toView(company);
     }
@@ -86,18 +97,12 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public PageVO<CompanyJobView> listJobs(String status, String auditStatus, String keyword, int page, int size) {
         CompanyEntity company = requireCompany();
-        int safePage = Math.max(1, page);
-        int safeSize = Math.max(1, Math.min(size, 100));
-        List<JobEntity> jobs = jobMapper.findByCompanyId(company.getId());
-        List<JobEntity> filtered = jobs.stream()
-                .filter(job -> status == null || status.isBlank() || job.getStatus().name().equals(status))
-                .filter(job -> auditStatus == null || auditStatus.isBlank() || job.getAuditStatus().name().equals(auditStatus))
-                .filter(job -> keyword == null || keyword.isBlank() || job.getTitle().contains(keyword))
-                .toList();
-        int from = Math.min((safePage - 1) * safeSize, filtered.size());
-        int to = Math.min(from + safeSize, filtered.size());
-        List<CompanyJobView> records = filtered.subList(from, to).stream().map(this::toJobView).toList();
-        return PageVO.of(records, filtered.size(), safePage, safeSize);
+        PageRequest pageRequest = PageRequest.of(page, size);
+        PageHelper.startPage(pageRequest.page(), pageRequest.size());
+        Page<JobEntity> jobs = (Page<JobEntity>) jobMapper.findCompanyJobsPage(
+                company.getId(), status, auditStatus, keyword);
+        List<CompanyJobView> records = jobs.stream().map(this::toJobView).toList();
+        return PageVO.of(records, jobs.getTotal(), pageRequest.page(), pageRequest.size());
     }
 
     @Override
@@ -280,7 +285,8 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getIndustry(),
                 company.getScale(),
                 company.getCity(),
-                company.getLogoUrl(),
+                company.getLogoObjectKey(),
+                fileService.publicUrl(company.getLogoObjectKey()),
                 company.getIntro(),
                 company.getContactName(),
                 company.getContactPhone(),
@@ -304,7 +310,7 @@ public class CompanyServiceImpl implements CompanyService {
                 job.getId(),
                 job.getCompanyId(),
                 company == null ? "" : company.getName(),
-                company == null ? null : company.getLogoUrl(),
+                company == null ? null : fileService.publicUrl(company.getLogoObjectKey()),
                 job.getTitle(),
                 job.getCity(),
                 job.getDistrict(),
@@ -343,7 +349,8 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getIndustry(),
                 company.getScale(),
                 company.getCity(),
-                company.getLogoUrl(),
+                company.getLogoObjectKey(),
+                fileService.publicUrl(company.getLogoObjectKey()),
                 company.getAuditStatus()
         );
     }

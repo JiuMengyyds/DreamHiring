@@ -15,6 +15,7 @@ import com.dreamhiring.security.SecurityPrincipal;
 import com.dreamhiring.security.UserRole;
 import com.dreamhiring.service.AuthService;
 import com.dreamhiring.service.CaptchaService;
+import com.dreamhiring.service.FileService;
 import com.dreamhiring.vo.AuthViews.AuthView;
 import com.dreamhiring.vo.AuthViews.UserProfileView;
 import com.dreamhiring.vo.AuthViews.UserView;
@@ -34,19 +35,22 @@ public class AuthServiceImpl implements AuthService {
     private final CaptchaService captchaService;
     private final JwtService jwtService;
     private final CompanyMapper companyMapper;
+    private final FileService fileService;
 
     public AuthServiceImpl(
             UserMapper userMapper,
             PasswordEncoder passwordEncoder,
             CaptchaService captchaService,
             JwtService jwtService,
-            CompanyMapper companyMapper
+            CompanyMapper companyMapper,
+            FileService fileService
     ) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.captchaService = captchaService;
         this.jwtService = jwtService;
         this.companyMapper = companyMapper;
+        this.fileService = fileService;
     }
 
     @Override
@@ -110,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserProfileView currentUser() {
-        return toProfile(requireCurrentUser());
+        return toProfile(requireCurrentUser(), fileService);
     }
 
     public static SecurityPrincipal requirePrincipal() {
@@ -138,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
                 jwtService.createToken(principal),
                 "Bearer",
                 jwtService.getExpirationSeconds(),
-                toView(user)
+                toView(user, fileService)
         );
     }
 
@@ -151,7 +155,7 @@ public class AuthServiceImpl implements AuthService {
         return user;
     }
 
-    static UserView toView(UserAccount user) {
+    static UserView toView(UserAccount user, FileService fileService) {
         return new UserView(
                 user.getId(),
                 user.getUsername(),
@@ -160,11 +164,12 @@ public class AuthServiceImpl implements AuthService {
                 user.getStatus(),
                 user.getPhone(),
                 user.getEmail(),
-                user.getAvatarUrl()
+                user.getAvatarObjectKey(),
+                fileService.publicUrl(user.getAvatarObjectKey())
         );
     }
 
-    static UserProfileView toProfile(UserAccount user) {
+    static UserProfileView toProfile(UserAccount user, FileService fileService) {
         return new UserProfileView(
                 user.getId(),
                 user.getUsername(),
@@ -173,7 +178,8 @@ public class AuthServiceImpl implements AuthService {
                 user.getStatus(),
                 user.getPhone(),
                 user.getEmail(),
-                user.getAvatarUrl(),
+                user.getAvatarObjectKey(),
+                fileService.publicUrl(user.getAvatarObjectKey()),
                 user.getCreateTime(),
                 user.getUpdateTime(),
                 user.getLastLoginTime()

@@ -68,6 +68,8 @@ Content-Type: application/json
 
 - `page` 从 1 开始。
 - `size` 默认 10，最大 100。
+- `page < 1` 时按 1 处理；`size < 1` 时按 1 处理，`size > 100` 时按 100 处理。
+- 越界分页参数采用收敛策略，不返回参数错误；响应中的 `page`、`size` 始终是服务端实际使用的值。
 - 列表接口一律通过 `data.records` 获取记录。
 
 ### 2.3 类型约定
@@ -287,6 +289,7 @@ matchScore = round(matchedWeight / totalJobWeight × 100)
 - 数据库只保存 `objectKey`，不保存可能过期的临时签名 URL。
 - 简历附件使用私有读权限，读取时返回短期签名 URL，并在响应中给出 `urlExpiresAt`。
 - 企业 Logo 和头像可使用公开 Bucket 路径或 CDN 地址，`urlExpiresAt` 返回 `null`。
+- 企业资料和用户资料分别持久化 `logoObjectKey`、`avatarObjectKey`；对外 `logoUrl`、`avatarUrl` 由对象键动态生成，不允许客户端回传临时签名 URL。
 - 建议对象键格式：`resume/{userId}/{yyyy}/{MM}/{uuid}.pdf`、`company/{companyId}/logo/{uuid}.webp`、`avatar/{userId}/{uuid}.webp`。
 - 禁止直接信任客户端 `Content-Type`，必须读取文件头校验。
 - OSS Endpoint、Bucket、访问密钥等通过环境变量或外部配置注入，禁止写入仓库。
