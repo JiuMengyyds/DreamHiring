@@ -18,16 +18,16 @@ public class RabbitNotificationGateway implements NotificationGateway {
 
     @Override
     public void publishApplicationStatusChanged(ApplicationStatusChangedEvent event) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    send(event);
-                }
-            });
-            return;
-        }
-        send(event);
+        afterCommit(() -> send(event));
+    }
+
+    @Override
+    public void publishAnnouncementPublished(AnnouncementPublishedEvent event) {
+        afterCommit(() -> rabbitTemplate.convertAndSend(
+                RabbitNotificationConfig.EXCHANGE,
+                RabbitNotificationConfig.ANNOUNCEMENT_ROUTING_KEY,
+                event
+        ));
     }
 
     private void send(ApplicationStatusChangedEvent event) {
@@ -36,5 +36,18 @@ public class RabbitNotificationGateway implements NotificationGateway {
                 RabbitNotificationConfig.ROUTING_KEY,
                 event
         );
+    }
+
+    private void afterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+            return;
+        }
+        action.run();
     }
 }

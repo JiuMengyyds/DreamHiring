@@ -1,8 +1,10 @@
 package com.dreamhiring;
 
 import com.dreamhiring.entity.DomainEnums.ApplicationStatus;
+import com.dreamhiring.entity.DomainEnums.AnnouncementChannel;
 import com.dreamhiring.entity.JobEntity;
 import com.dreamhiring.messaging.ApplicationStatusChangedEvent;
+import com.dreamhiring.messaging.AnnouncementPublishedEvent;
 import com.dreamhiring.messaging.RabbitNotificationConfig;
 import com.dreamhiring.service.CaptchaService;
 import com.dreamhiring.service.HotJobCacheService;
@@ -48,6 +50,7 @@ class InfrastructureSmokeTest {
     @AfterEach
     void cleanInfrastructureData() {
         jdbcTemplate.update("DELETE FROM message WHERE dedup_key = ?", "APPLICATION:9999");
+        jdbcTemplate.update("DELETE FROM message WHERE dedup_key LIKE ?", "ANNOUNCEMENT:8888:%");
         redisTemplate.delete(HotJobCacheService.HOT_JOB_KEY);
     }
 
@@ -74,16 +77,39 @@ class InfrastructureSmokeTest {
         assertThat(count).isEqualTo(1);
     }
 
+    @Test
+    void rabbitAnnouncementConsumerShouldNotifyTargetRole() {
+        rabbitTemplate.convertAndSend(
+                RabbitNotificationConfig.EXCHANGE,
+                RabbitNotificationConfig.ANNOUNCEMENT_ROUTING_KEY,
+                new AnnouncementPublishedEvent(
+                        8888L,
+                        "基础设施公告",
+                        "公告消息链路已验证",
+                        AnnouncementChannel.SEEKER
+                )
+        );
+
+        Integer count = awaitCount(
+                "SELECT COUNT(*) FROM message WHERE dedup_key LIKE 'ANNOUNCEMENT:8888:%'",
+                1
+        );
+        assertThat(count).isEqualTo(1);
+    }
+
     private Integer awaitMessageCount() {
+        return awaitCount(
+                "SELECT COUNT(*) FROM message WHERE dedup_key = 'APPLICATION:9999'",
+                1
+        );
+    }
+
+    private Integer awaitCount(String sql, int expectedMinimum) {
         Instant deadline = Instant.now().plus(Duration.ofSeconds(15));
         Integer count = 0;
         while (Instant.now().isBefore(deadline)) {
-            count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM message WHERE dedup_key = ?",
-                    Integer.class,
-                    "APPLICATION:9999"
-            );
-            if (count != null && count > 0) {
+            count = jdbcTemplate.queryForObject(sql, Integer.class);
+            if (count != null && count >= expectedMinimum) {
                 return count;
             }
             try {

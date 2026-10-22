@@ -121,6 +121,30 @@ class BusinessClosureIntegrationTest {
                 ))), 200);
 
         String adminToken = bearer("admin_zhou");
+        JsonNode announcement = request(post("/api/admin/announcements")
+                .header(HttpHeaders.AUTHORIZATION, adminToken)
+                .contentType("application/json")
+                .content(json(Map.of(
+                        "title", "闭环公告-" + suffix,
+                        "summary", "闭环测试公告摘要",
+                        "content", "这是用于验证公告消息投递的完整内容。",
+                        "channel", "SEEKER",
+                        "status", "PUBLISHED"
+                ))), 200);
+        JsonNode announcementMessages = request(get("/api/messages")
+                .header(HttpHeaders.AUTHORIZATION, seekerToken)
+                .queryParam("type", "ANNOUNCEMENT")
+                .queryParam("page", "1")
+                .queryParam("size", "50"), 200);
+        boolean hasAnnouncementMessage = false;
+        for (JsonNode message : announcementMessages.path("records")) {
+            if (message.path("relatedId").asLong() == announcement.path("id").asLong()) {
+                hasAnnouncementMessage = true;
+                break;
+            }
+        }
+        assertThat(hasAnnouncementMessage).isTrue();
+
         request(put("/api/admin/companies/" + companyId + "/audit")
                 .header(HttpHeaders.AUTHORIZATION, adminToken)
                 .contentType("application/json")

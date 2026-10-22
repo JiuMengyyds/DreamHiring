@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adminApi, authApi, companyApi, jobApi, resumeApi } from '../api/index.js'
+import { adminApi, authApi, companyApi, jobApi, messageApi, resumeApi } from '../api/index.js'
 import { getDefaultResumeId } from '../utils/resume.js'
 
 describe('mock API contract', () => {
@@ -78,5 +78,20 @@ describe('mock API contract', () => {
       summary: '两年产品设计经验。',
     })
     expect(resume.userId).toBe(seeker.user.id)
+  })
+
+  it('creates announcement messages for the selected channel', async () => {
+    localStorage.setItem('dreamhiring_token', 'mock-token-admin_zhou')
+    const announcement = await adminApi.createAnnouncement({
+      title: '渠道公告',
+      summary: '仅求职者可见',
+      content: '公告正文',
+      channel: 'SEEKER',
+      status: 'PUBLISHED',
+    })
+
+    localStorage.setItem('dreamhiring_token', 'mock-token-linzhixia')
+    const messages = await messageApi.list({ type: 'ANNOUNCEMENT', page: 1, size: 100 })
+    expect(messages.records.some((item) => item.relatedId === announcement.id)).toBe(true)
   })
 })

@@ -25,6 +25,9 @@ public class RabbitNotificationConfig {
     public static final String QUEUE = "dreamhiring.notification.queue";
     public static final String DEAD_LETTER_QUEUE = "dreamhiring.notification.dlq";
     public static final String ROUTING_KEY = "application.status.changed";
+    public static final String ANNOUNCEMENT_QUEUE = "dreamhiring.announcement.queue";
+    public static final String ANNOUNCEMENT_ROUTING_KEY = "announcement.published";
+    public static final String ANNOUNCEMENT_DLQ_ROUTING_KEY = "announcement.published.dlq";
 
     @Bean
     public DirectExchange notificationExchange() {
@@ -45,6 +48,14 @@ public class RabbitNotificationConfig {
     }
 
     @Bean
+    public Queue announcementQueue() {
+        return QueueBuilder.durable(ANNOUNCEMENT_QUEUE)
+                .deadLetterExchange(EXCHANGE)
+                .deadLetterRoutingKey(ANNOUNCEMENT_DLQ_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
     public Binding notificationBinding() {
         return BindingBuilder.bind(notificationQueue())
                 .to(notificationExchange())
@@ -56,6 +67,20 @@ public class RabbitNotificationConfig {
         return BindingBuilder.bind(deadLetterQueue())
                 .to(notificationExchange())
                 .with(DEAD_LETTER_QUEUE);
+    }
+
+    @Bean
+    public Binding announcementBinding() {
+        return BindingBuilder.bind(announcementQueue())
+                .to(notificationExchange())
+                .with(ANNOUNCEMENT_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding announcementDeadLetterBinding() {
+        return BindingBuilder.bind(deadLetterQueue())
+                .to(notificationExchange())
+                .with(ANNOUNCEMENT_DLQ_ROUTING_KEY);
     }
 
     @Bean

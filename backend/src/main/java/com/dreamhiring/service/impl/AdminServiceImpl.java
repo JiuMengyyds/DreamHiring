@@ -23,6 +23,8 @@ import com.dreamhiring.mapper.JobMapper;
 import com.dreamhiring.mapper.MessageMapper;
 import com.dreamhiring.mapper.ResumeMapper;
 import com.dreamhiring.mapper.UserMapper;
+import com.dreamhiring.messaging.AnnouncementPublishedEvent;
+import com.dreamhiring.messaging.NotificationGateway;
 import com.dreamhiring.security.SecurityPrincipal;
 import com.dreamhiring.service.AdminService;
 import com.dreamhiring.util.SkillTagUtils;
@@ -51,6 +53,7 @@ public class AdminServiceImpl implements AdminService {
     private final MessageMapper messageMapper;
     private final JobCategoryMapper categoryMapper;
     private final AnnouncementMapper announcementMapper;
+    private final NotificationGateway notificationGateway;
 
     public AdminServiceImpl(
             UserMapper userMapper,
@@ -60,7 +63,8 @@ public class AdminServiceImpl implements AdminService {
             ResumeMapper resumeMapper,
             MessageMapper messageMapper,
             JobCategoryMapper categoryMapper,
-            AnnouncementMapper announcementMapper
+            AnnouncementMapper announcementMapper,
+            NotificationGateway notificationGateway
     ) {
         this.userMapper = userMapper;
         this.companyMapper = companyMapper;
@@ -70,6 +74,7 @@ public class AdminServiceImpl implements AdminService {
         this.messageMapper = messageMapper;
         this.categoryMapper = categoryMapper;
         this.announcementMapper = announcementMapper;
+        this.notificationGateway = notificationGateway;
     }
 
     @Override
@@ -261,6 +266,7 @@ public class AdminServiceImpl implements AdminService {
                 request.status() == com.dreamhiring.entity.DomainEnums.AnnouncementStatus.PUBLISHED ? now : null);
         announcement.setDeleted(0);
         announcementMapper.insert(announcement);
+        publishAnnouncementIfNeeded(announcement);
         return AnnouncementServiceImpl.toView(announcement);
     }
 
@@ -268,6 +274,8 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public AnnouncementView updateAnnouncement(Long announcementId, AnnouncementUpsertRequest request) {
         Announcement announcement = requireAnnouncement(announcementId);
+        boolean wasPublished = announcement.getStatus()
+                == com.dreamhiring.entity.DomainEnums.AnnouncementStatus.PUBLISHED;
         Announcement updated = fromRequest(request);
         updated.setId(announcementId);
         updated.setPublisherId(announcement.getPublisherId());
@@ -278,6 +286,9 @@ public class AdminServiceImpl implements AdminService {
                         ? announcement.getPublishTime() == null ? LocalDateTime.now() : announcement.getPublishTime()
                         : null);
         announcementMapper.update(updated);
+        if (!wasPublished) {
+            publishAnnouncementIfNeeded(updated);
+        }
         return AnnouncementServiceImpl.toView(updated);
     }
 
@@ -296,6 +307,17 @@ public class AdminServiceImpl implements AdminService {
                 .channel(request.channel())
                 .status(request.status())
                 .build();
+    }
+
+    private void publishAnnouncementIfNeeded(Announcement announcement) {
+        if (announcement.getStatus() == com.dreamhiring.entity.DomainEnums.AnnouncementStatus.PUBLISHED) {
+            notificationGateway.publishAnnouncementPublished(new AnnouncementPublishedEvent(
+                    announcement.getId(),
+                    announcement.getTitle(),
+                    announcement.getSummary(),
+                    announcement.getChannel()
+            ));
+        }
     }
 
     private UserAccount requireUser(Long id) {

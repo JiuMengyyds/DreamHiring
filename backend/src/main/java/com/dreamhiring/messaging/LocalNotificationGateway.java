@@ -27,6 +27,16 @@ public class LocalNotificationGateway implements NotificationGateway {
         );
     }
 
+    @Override
+    public void publishAnnouncementPublished(AnnouncementPublishedEvent event) {
+        notificationService.sendAnnouncement(
+                event.announcementId(),
+                event.title(),
+                event.summary(),
+                event.channel()
+        );
+    }
+
     private String statusLabel(com.dreamhiring.entity.DomainEnums.ApplicationStatus status) {
         return switch (status) {
             case PENDING_VIEW -> "待查看";

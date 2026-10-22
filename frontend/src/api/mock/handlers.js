@@ -503,6 +503,23 @@ export function handleMockRequest(config) {
     if (method === 'post') {
       const announcement = { ...body, id: Date.now(), publisherId: check.user.id, createdAt: now, publishedAt: body.status === 'PUBLISHED' ? now : null }
       db.announcements.unshift(announcement)
+      if (announcement.status === 'PUBLISHED') {
+        const roles = announcement.channel === 'ALL'
+          ? ['SEEKER', 'COMPANY', 'ADMIN']
+          : [announcement.channel]
+        for (const user of db.users.filter((item) => roles.includes(item.role) && item.status === 'ACTIVE')) {
+          db.messages.unshift({
+            id: Date.now() + user.id,
+            receiverId: user.id,
+            type: 'ANNOUNCEMENT',
+            title: `平台公告：${announcement.title}`,
+            content: announcement.summary || '请前往公告中心查看详情。',
+            relatedId: announcement.id,
+            isRead: false,
+            createdAt: now,
+          })
+        }
+      }
       return ok(announcement)
     }
   }

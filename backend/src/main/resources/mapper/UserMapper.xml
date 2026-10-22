@@ -40,6 +40,15 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="findActiveIdsByRoles" resultType="long">
+        SELECT id FROM sys_user
+        WHERE deleted = 0 AND status = 'ACTIVE'
+          AND role IN
+        <foreach collection="roles" item="role" open="(" separator="," close=")">
+            #{role}
+        </foreach>
+    </select>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sys_user (
             username, password_hash, nickname, role, status, phone, email, avatar_url, last_login_time,

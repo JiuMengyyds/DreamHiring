@@ -17,6 +17,8 @@ public interface UserMapper {
                               @Param("role") String role,
                               @Param("status") String status);
 
+    List<Long> findActiveIdsByRoles(@Param("roles") List<String> roles);
+
     int insert(UserAccount user);
 
     int updateProfile(UserAccount user);
