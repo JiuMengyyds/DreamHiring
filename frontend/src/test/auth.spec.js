@@ -37,4 +37,20 @@ describe('auth store', () => {
     expect(await auth.ensureIdentity()).toBe(false)
     expect(auth.isAuthenticated).toBe(false)
   })
+
+  it('persists a newly registered seeker session', async () => {
+    const auth = useAuthStore()
+    const user = await auth.register({
+      username: 'registered_seeker',
+      password: 'dreamhiring',
+      nickname: '注册求职者',
+      role: 'SEEKER',
+      captchaId: 'mock',
+      captchaCode: '',
+    })
+
+    expect(user.role).toBe('SEEKER')
+    expect(auth.isAuthenticated).toBe(true)
+    expect(localStorage.getItem('dreamhiring_user')).toContain('registered_seeker')
+  })
 })

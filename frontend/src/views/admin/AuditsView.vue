@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHead from '../../components/PageHead.vue'
 import { adminApi } from '../../api/index.js'
 import { AUDIT_STATUS } from '../../utils/constants.js'
@@ -21,11 +21,20 @@ async function load() {
 
 async function audit(row, status) {
   try {
-    await adminApi.auditJob(row.id, { auditStatus: status, reason: status === 'REJECTED' ? '职位信息不完整' : '' })
+    let reason = ''
+    if (status === 'REJECTED') {
+      const result = await ElMessageBox.prompt('请输入职位驳回原因', '驳回职位', {
+        inputValidator: (value) => Boolean(value?.trim()) || '驳回原因不能为空',
+      })
+      reason = result.value.trim()
+    }
+    await adminApi.auditJob(row.id, { auditStatus: status, reason })
     ElMessage.success(status === 'APPROVED' ? '审核通过' : '职位已驳回')
     load()
   } catch (error) {
-    ElMessage.error(error.message || '审核失败')
+    if (error !== 'cancel' && error !== 'close') {
+      ElMessage.error(error.message || '审核失败')
+    }
   }
 }
 

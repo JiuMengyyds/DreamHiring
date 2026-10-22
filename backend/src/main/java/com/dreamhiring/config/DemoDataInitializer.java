@@ -78,7 +78,18 @@ public class DemoDataInitializer implements ApplicationRunner {
                 .build();
         companyMapper.insert(company);
 
-        JobCategory category = JobCategory.builder().name("产品 / 设计").sort(10).deleted(0).build();
+        JobCategory rootCategory = JobCategory.builder()
+                .name("产品 / 设计")
+                .sort(10)
+                .deleted(0)
+                .build();
+        categoryMapper.insert(rootCategory);
+        JobCategory category = JobCategory.builder()
+                .name("产品经理")
+                .parentId(rootCategory.getId())
+                .sort(1)
+                .deleted(0)
+                .build();
         categoryMapper.insert(category);
 
         JobEntity job = JobEntity.builder()

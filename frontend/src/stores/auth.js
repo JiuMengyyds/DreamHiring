@@ -13,14 +13,21 @@ export const useAuthStore = defineStore('auth', {
     role: (state) => state.user?.role || '',
   },
   actions: {
-    async login(payload) {
-      const data = await authApi.login(payload)
+    persistAuth(data) {
       this.token = data.accessToken
       this.user = data.user
       this.identityChecked = true
       localStorage.setItem(TOKEN_KEY, data.accessToken)
       localStorage.setItem(USER_KEY, JSON.stringify(data.user))
       return data.user
+    },
+    async login(payload) {
+      const data = await authApi.login(payload)
+      return this.persistAuth(data)
+    },
+    async register(payload) {
+      const data = await authApi.register(payload)
+      return this.persistAuth(data)
     },
     async fetchMe() {
       this.user = await authApi.me()

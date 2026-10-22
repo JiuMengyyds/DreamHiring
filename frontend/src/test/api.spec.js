@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adminApi, authApi, jobApi, resumeApi } from '../api/index.js'
+import { adminApi, authApi, companyApi, jobApi, resumeApi } from '../api/index.js'
 import { getDefaultResumeId } from '../utils/resume.js'
 
 describe('mock API contract', () => {
@@ -42,5 +42,41 @@ describe('mock API contract', () => {
     localStorage.setItem('dreamhiring_token', 'mock-token-linzhixia')
     const resumes = await resumeApi.list()
     expect(await getDefaultResumeId()).toBe(resumes.find((item) => item.isDefault).id)
+  })
+
+  it('registers a company and creates a resume through the API contracts', async () => {
+    const company = await authApi.register({
+      username: 'new_company_hr',
+      password: 'dreamhiring',
+      nickname: '新企业',
+      role: 'COMPANY',
+      captchaId: 'mock',
+      captchaCode: '',
+    })
+    localStorage.setItem('dreamhiring_token', company.accessToken)
+    expect((await companyApi.profile()).auditStatus).toBe('PENDING')
+
+    const seeker = await authApi.register({
+      username: 'new_seeker',
+      password: 'dreamhiring',
+      nickname: '新求职者',
+      role: 'SEEKER',
+      captchaId: 'mock',
+      captchaCode: '',
+    })
+    localStorage.setItem('dreamhiring_token', seeker.accessToken)
+    const resume = await resumeApi.create({
+      name: '新求职者',
+      title: '产品设计师',
+      education: 'BACHELOR',
+      experienceYears: 2,
+      currentCity: '杭州',
+      expectCity: '杭州',
+      expectSalaryMin: 10,
+      expectSalaryMax: 18,
+      skillTags: ['Figma'],
+      summary: '两年产品设计经验。',
+    })
+    expect(resume.userId).toBe(seeker.user.id)
   })
 })

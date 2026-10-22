@@ -10,6 +10,7 @@ const list = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const categories = ref([])
+const creating = ref(false)
 const form = reactive({
   title: '',
   categoryId: null,
@@ -36,10 +37,14 @@ async function load() {
 }
 
 async function toggleStatus(row) {
-  const next = row.status === 'PUBLISHED' ? 'OFFLINE' : 'PUBLISHED'
-  await companyApi.updateJobStatus(row.id, { status: next })
-  ElMessage.success(next === 'PUBLISHED' ? '职位已上架' : '职位已下线')
-  load()
+  try {
+    const next = row.status === 'PUBLISHED' ? 'OFFLINE' : 'PUBLISHED'
+    await companyApi.updateJobStatus(row.id, { status: next })
+    ElMessage.success(next === 'PUBLISHED' ? '职位已上架' : '职位已下线')
+    load()
+  } catch (error) {
+    ElMessage.warning(error.message || '职位状态更新失败')
+  }
 }
 
 async function remove(row) {
@@ -50,6 +55,15 @@ async function remove(row) {
 }
 
 async function create() {
+  if (!form.title.trim() || !form.categoryId) {
+    ElMessage.warning('请填写职位名称并选择分类')
+    return
+  }
+  if (form.salaryMin > form.salaryMax) {
+    ElMessage.warning('最低薪资不能高于最高薪资')
+    return
+  }
+  creating.value = true
   const payload = {
     ...form,
     salaryMin: Number(form.salaryMin),
@@ -63,10 +77,16 @@ async function create() {
   delete payload.dutiesText
   delete payload.requirementsText
   delete payload.perksText
-  await companyApi.createJob(payload)
-  dialogVisible.value = false
-  ElMessage.success('职位已提交审核')
-  load()
+  try {
+    await companyApi.createJob(payload)
+    dialogVisible.value = false
+    ElMessage.success('职位已提交审核')
+    load()
+  } catch (error) {
+    ElMessage.error(error.message || '职位提交失败')
+  } finally {
+    creating.value = false
+  }
 }
 
 onMounted(async () => {
@@ -103,11 +123,18 @@ onMounted(async () => {
         <el-table-column label="审核" width="120">
           <template #default="{ row }"><el-tag :type="AUDIT_STATUS[row.auditStatus]?.type">{{ AUDIT_STATUS[row.auditStatus]?.label }}</el-tag></template>
         </el-table-column>
+        <el-table-column prop="auditReason" label="审核说明" min-width="160" show-overflow-tooltip />
         <el-table-column prop="applicantCount" label="投递数" width="90" />
         <el-table-column prop="updatedAt" label="最近更新" width="180" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="toggleStatus(row)">{{ row.status === 'PUBLISHED' ? '下线' : '上架' }}</el-button>
+            <el-button
+              size="small"
+              :disabled="row.status !== 'PUBLISHED' && row.auditStatus !== 'APPROVED'"
+              @click="toggleStatus(row)"
+            >
+              {{ row.status === 'PUBLISHED' ? '下线' : '上架' }}
+            </el-button>
             <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -142,7 +169,7 @@ onMounted(async () => {
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="create">提交审核</el-button>
+        <el-button type="primary" :loading="creating" @click="create">提交审核</el-button>
       </template>
     </el-dialog>
   </div>

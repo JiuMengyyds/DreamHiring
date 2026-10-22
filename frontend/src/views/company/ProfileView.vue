@@ -49,6 +49,13 @@ onMounted(load)
     </PageHead>
 
     <section class="panel" v-if="company">
+      <el-alert
+        v-if="company.auditReason"
+        :title="`审核说明：${company.auditReason}`"
+        :type="company.auditStatus === 'REJECTED' ? 'error' : 'info'"
+        :closable="false"
+        style="margin-bottom: 18px"
+      />
       <el-form label-position="top" style="max-width: 720px">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
           <el-form-item label="企业名称"><el-input v-model="form.name" /></el-form-item>

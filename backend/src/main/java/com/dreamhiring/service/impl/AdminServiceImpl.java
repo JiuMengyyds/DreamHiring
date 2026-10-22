@@ -170,6 +170,12 @@ public class AdminServiceImpl implements AdminService {
                 && (request.reason() == null || request.reason().isBlank())) {
             throw new BusinessException(ResultCode.UNPROCESSABLE_ENTITY, "驳回时必须填写原因");
         }
+        if (request.auditStatus() == AuditStatus.APPROVED) {
+            CompanyEntity company = companyMapper.findById(job.getCompanyId());
+            if (company == null || company.getAuditStatus() != CompanyAuditStatus.APPROVED) {
+                throw new BusinessException(ResultCode.CONFLICT, "企业认证通过后才能发布职位");
+            }
+        }
         JobStatus status = request.auditStatus() == AuditStatus.APPROVED
                 ? JobStatus.PUBLISHED : job.getStatus();
         LocalDateTime now = LocalDateTime.now();

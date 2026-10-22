@@ -97,7 +97,34 @@ export function handleMockRequest(config) {
   }
 
   if (path === '/api/auth/register' && method === 'post') {
-    return ok({ accessToken: `mock-token-${body.username}`, tokenType: 'Bearer', expiresIn: 7200, user: { ...credentialUsers[body.username], role: body.role } })
+    if (credentialUsers[body.username]) return fail(409, '用户名已存在')
+    const user = {
+      id: Date.now(),
+      username: body.username,
+      nickname: body.nickname || body.username,
+      role: body.role,
+      phone: body.phone || '',
+      email: body.email || '',
+      status: 'ACTIVE',
+      avatarUrl: '',
+    }
+    credentialUsers[body.username] = user
+    db.users.push(user)
+    if (body.role === 'COMPANY') {
+      db.companies.push({
+        id: user.id,
+        userId: user.id,
+        name: `${user.nickname}的企业`,
+        industry: '待完善',
+        scale: '',
+        city: '待完善',
+        logoUrl: '',
+        intro: '企业资料待完善',
+        auditStatus: 'PENDING',
+        activeJobCount: 0,
+      })
+    }
+    return ok({ accessToken: `mock-token-${user.username}`, tokenType: 'Bearer', expiresIn: 7200, user })
   }
 
   if (path === '/api/auth/login' && method === 'post') {
