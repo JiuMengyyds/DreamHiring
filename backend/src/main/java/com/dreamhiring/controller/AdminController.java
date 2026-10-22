@@ -6,11 +6,14 @@ import com.dreamhiring.dto.AdminRequests.AnnouncementUpsertRequest;
 import com.dreamhiring.dto.AdminRequests.AuditRequest;
 import com.dreamhiring.dto.AdminRequests.CategoryUpsertRequest;
 import com.dreamhiring.dto.AdminRequests.UserStatusRequest;
+import com.dreamhiring.entity.DomainEnums.DeadLetterStatus;
 import com.dreamhiring.service.AdminService;
+import com.dreamhiring.service.DeadLetterService;
 import com.dreamhiring.vo.AnnouncementView;
 import com.dreamhiring.vo.AuthViews.UserProfileView;
 import com.dreamhiring.vo.CompanyViews.CompanyJobView;
 import com.dreamhiring.vo.CompanyViews.CompanyView;
+import com.dreamhiring.vo.DeadLetterViews.DeadLetterView;
 import com.dreamhiring.vo.JobViews.CategoryNode;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,9 +33,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class AdminController {
 
     private final AdminService adminService;
+    private final DeadLetterService deadLetterService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, DeadLetterService deadLetterService) {
         this.adminService = adminService;
+        this.deadLetterService = deadLetterService;
     }
 
     @GetMapping("/users")
@@ -160,5 +165,19 @@ public class AdminController {
     public Result<Void> deleteAnnouncement(@PathVariable Long announcementId) {
         adminService.deleteAnnouncement(announcementId);
         return Result.success();
+    }
+
+    @GetMapping("/dead-letters")
+    public Result<PageVO<DeadLetterView>> deadLetters(
+            @RequestParam(required = false) DeadLetterStatus status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return Result.success(deadLetterService.list(status, page, size));
+    }
+
+    @PostMapping("/dead-letters/{deadLetterId}/replay")
+    public Result<DeadLetterView> replayDeadLetter(@PathVariable Long deadLetterId) {
+        return Result.success(deadLetterService.replay(deadLetterId));
     }
 }

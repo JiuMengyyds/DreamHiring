@@ -18,6 +18,7 @@ if (Test-Path -LiteralPath $releaseRoot) {
 
 New-Item -ItemType Directory -Path (Join-Path $releaseRoot 'frontend') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $releaseRoot 'deploy') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $releaseRoot 'deploy\db') -Force | Out-Null
 
 if (-not $SkipInstall) {
     npm ci --prefix $frontendRoot
@@ -44,6 +45,8 @@ Copy-Item -Path (Join-Path $frontendRoot 'dist\*') -Destination (Join-Path $rele
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'nginx\dreamhiring.conf') -Destination (Join-Path $releaseRoot 'deploy\dreamhiring.conf')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'systemd\dreamhiring-backend.service') -Destination (Join-Path $releaseRoot 'deploy\dreamhiring-backend.service')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot '.env.production.example') -Destination (Join-Path $releaseRoot 'deploy\.env.production.example')
+Copy-Item -LiteralPath (Join-Path $projectRoot 'backend\db\mysql-schema.sql') -Destination (Join-Path $releaseRoot 'deploy\db\mysql-schema.sql')
+Copy-Item -LiteralPath (Join-Path $projectRoot 'backend\db\upgrade-dead-letter.sql') -Destination (Join-Path $releaseRoot 'deploy\db\upgrade-dead-letter.sql')
 
 $commit = (git -C $projectRoot rev-parse --short HEAD).Trim()
 $manifest = [ordered]@{

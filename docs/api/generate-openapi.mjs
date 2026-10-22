@@ -334,6 +334,16 @@ const parameters = {
       enum: ["DRAFT", "PUBLISHED", "OFFLINE"],
     },
   },
+  DeadLetterStatus: {
+    name: "status",
+    in: "query",
+    required: false,
+    description: "死信归档状态",
+    schema: {
+      type: "string",
+      enum: ["PENDING", "REPLAYING", "REPLAYED"],
+    },
+  },
   Months: {
     name: "months",
     in: "query",
@@ -395,6 +405,13 @@ const parameters = {
     in: "path",
     required: true,
     description: "公告 ID",
+    schema: idSchema,
+  },
+  DeadLetterId: {
+    name: "deadLetterId",
+    in: "path",
+    required: true,
+    description: "死信归档 ID",
     schema: idSchema,
   },
 };
@@ -789,6 +806,48 @@ const schemas = {
   AnnouncementPage: pageSchema("Announcement"),
   AnnouncementPageResult: resultOf(schemaRef("AnnouncementPage")),
   AnnouncementResult: resultOf(schemaRef("Announcement")),
+  DeadLetter: {
+    type: "object",
+    required: [
+      "id",
+      "queueName",
+      "exchangeName",
+      "routingKey",
+      "messageBody",
+      "headers",
+      "status",
+      "replayCount",
+      "createdAt",
+    ],
+    properties: {
+      id: idSchema,
+      queueName: { type: "string", maxLength: 120 },
+      exchangeName: { type: "string", maxLength: 120 },
+      routingKey: { type: "string", maxLength: 150 },
+      messageId: { type: "string", maxLength: 100, nullable: true },
+      correlationId: { type: "string", maxLength: 100, nullable: true },
+      messageBody: { type: "string" },
+      contentType: { type: "string", maxLength: 100, nullable: true },
+      headers: {
+        type: "object",
+        additionalProperties: true,
+      },
+      failureReason: { type: "string", maxLength: 1000, nullable: true },
+      status: {
+        type: "string",
+        enum: ["PENDING", "REPLAYING", "REPLAYED"],
+      },
+      replayCount: { type: "integer", minimum: 0 },
+      createdAt: timestamp,
+      replayedAt: {
+        ...timestamp,
+        nullable: true,
+      },
+    },
+  },
+  DeadLetterPage: pageSchema("DeadLetter"),
+  DeadLetterPageResult: resultOf(schemaRef("DeadLetterPage")),
+  DeadLetterResult: resultOf(schemaRef("DeadLetter")),
   ResumeUpsertRequest: {
     type: "object",
     required: [
@@ -2055,6 +2114,39 @@ export function buildOpenApi() {
           parameters: [parameterRef("AnnouncementId")],
           successSchema: "VoidResult",
           errors: ["unauthorized", "forbidden", "notFound", "serverError"],
+        }),
+      },
+      "/api/admin/dead-letters": {
+        get: operation({
+          tag: "平台管理",
+          summary: "查询 RabbitMQ 死信归档",
+          operationId: "adminDeadLetterList",
+          roles: ["ADMIN"],
+          description:
+            "分页查询消费者重试耗尽后归档的死信消息，可按处理状态筛选。归档保存原始队列、交换机、路由键、消息体、请求头和失败原因，便于排查和重投。",
+          parameters: [query("DeadLetterStatus"), query("Page"), query("Size")],
+          successSchema: "DeadLetterPageResult",
+          errors: ["badRequest", "unauthorized", "forbidden", "serverError"],
+        }),
+      },
+      "/api/admin/dead-letters/{deadLetterId}/replay": {
+        post: operation({
+          tag: "平台管理",
+          summary: "重投死信消息",
+          operationId: "adminDeadLetterReplay",
+          roles: ["ADMIN"],
+          description:
+            "把 PENDING 死信消息重新发送到原交换机和原路由键。重投前原子切换为 REPLAYING，发送失败会恢复 PENDING；发送成功标记 REPLAYED。该操作不删除 RabbitMQ 中的原死信，消费者必须保持幂等。",
+          parameters: [parameterRef("DeadLetterId")],
+          successSchema: "DeadLetterResult",
+          errors: [
+            "unauthorized",
+            "forbidden",
+            "notFound",
+            "conflict",
+            "unprocessableEntity",
+            "serverError",
+          ],
         }),
       },
       "/api/stats/dashboard": {

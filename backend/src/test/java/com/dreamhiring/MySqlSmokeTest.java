@@ -38,7 +38,12 @@ class MySqlSmokeTest {
 
         Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sys_user", Integer.class);
         Integer jobCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM job", Integer.class);
+        Integer deadLetterCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM dead_letter_message",
+                Integer.class
+        );
         assertThat(userCount).isNotNull().isNotNegative();
         assertThat(jobCount).isNotNull().isNotNegative();
+        assertThat(deadLetterCount).isNotNull().isNotNegative();
     }
 }

@@ -33,6 +33,7 @@ import com.dreamhiring.vo.JobViews.JobSummary;
 import com.dreamhiring.vo.MessageViews.MessageView;
 import com.dreamhiring.vo.ResumeView;
 import com.dreamhiring.vo.StatsViews;
+import com.dreamhiring.vo.DeadLetterViews;
 import com.dreamhiring.service.NotificationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -310,6 +311,7 @@ class ApiContractIntegrationTest {
         mappings.put("TrendPoint", StatsViews.TrendPoint.class);
         mappings.put("HotSkillItem", StatsViews.HotSkill.class);
         mappings.put("DashboardStatsData", StatsViews.Dashboard.class);
+        mappings.put("DeadLetter", DeadLetterViews.DeadLetterView.class);
         return mappings;
     }
 

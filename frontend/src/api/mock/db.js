@@ -532,6 +532,25 @@ const dashboardStats = {
   },
 }
 
+const deadLetters = [
+  {
+    id: 1,
+    queueName: 'dreamhiring.notification.queue',
+    exchangeName: 'dreamhiring.notification.exchange',
+    routingKey: 'application.status.changed',
+    messageId: 'mock-message-1',
+    correlationId: 'mock-correlation-1',
+    messageBody: '{"applicationId":2,"receiverId":3,"jobTitle":"产品经理（AI 方向）","status":"INTERVIEW"}',
+    contentType: 'application/json',
+    headers: { 'x-trace-id': 'mock-trace-1' },
+    failureReason: 'IllegalStateException: 模拟数据库写入失败',
+    status: 'PENDING',
+    replayCount: 0,
+    createdAt: '2026-10-22 09:12:00',
+    replayedAt: null,
+  },
+]
+
 export const db = {
   users,
   jobs,
@@ -543,6 +562,7 @@ export const db = {
   audits,
   categories,
   announcements,
+  deadLetters,
   dashboardStats,
 }
 

@@ -86,6 +86,8 @@ export const adminApi = {
   createAnnouncement: (payload) => client.post('/admin/announcements', payload),
   updateAnnouncement: (id, payload) => client.put(`/admin/announcements/${id}`, payload),
   deleteAnnouncement: (id) => client.delete(`/admin/announcements/${id}`),
+  deadLetters: (params) => client.get('/admin/dead-letters', { params }),
+  replayDeadLetter: (id) => client.post(`/admin/dead-letters/${id}/replay`),
 }
 
 export const statsApi = {

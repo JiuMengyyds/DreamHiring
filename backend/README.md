@@ -2,11 +2,12 @@
 
 基于 JDK 21、Spring Boot 3、Spring Security、MyBatis、MySQL、Redis、RabbitMQ 和 OSS 的招聘平台后端。
 
-当前已实现接口文档中的 64 个操作，覆盖认证与用户、职位与分类、简历与投递、企业招聘、消息、公告、平台管理和数据洞察。Controller 路由与 OpenAPI 完全匹配，核心请求/响应模型字段由自动化契约测试校验。
+当前已实现接口文档中的 66 个操作，覆盖认证与用户、职位与分类、简历与投递、企业招聘、消息、公告、平台管理、死信管理和数据洞察。Controller 路由与 OpenAPI 完全匹配，核心请求/响应模型字段由自动化契约测试校验。
 
 ## 本地启动
 
 1. 使用 `db/mysql-schema.sql` 创建 `dream_hiring` 数据库和表。
+   已有数据库升级死信管理时执行 `db/upgrade-dead-letter.sql`。
 2. 按本机基础设施配置 `src/main/resources/application-dev.yml`，该文件不进入 Git。
 3. 填写 MySQL、Redis、RabbitMQ 和 OSS 配置。
 4. 开发环境可保留 `app.seed-demo.enabled=true`，首次启动自动创建演示账号和一个示例职位。
@@ -60,6 +61,7 @@ mvn -Dtest=MySqlSmokeTest test
 - 热门职位使用 Redis ZSET Cache-Aside，Redis 不可用时自动回源 MySQL。
 - 投递状态变更在事务提交后发送 RabbitMQ 消息，消费者手动 ACK、失败重试并投递死信队列。
 - 站内消息使用唯一幂等键，避免 RabbitMQ 重复消费产生重复通知。
+- 重试耗尽的消息会归档到 `dead_letter_message`，管理员可查询、查看消息体并重投。
 - 文件按文件头识别真实类型；OSS 只保存对象键，数据库不保存临时签名 URL。
 - 所有非 GET API 通过 AOP 写入操作日志。
 - 验证码、登录和注册按 IP 使用 Redis 固定窗口限流，Redis 故障时回退到内存计数。

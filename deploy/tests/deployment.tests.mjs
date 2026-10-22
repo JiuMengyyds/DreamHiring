@@ -86,4 +86,5 @@ test("systemd 与发布脚本具备可恢复部署基线", () => {
   assert.match(releaseScript, /\$mavenArguments \+= '-DskipTests'/);
   assert.match(releaseScript, /release-manifest\.json/);
   assert.match(releaseScript, /git -C \$projectRoot rev-parse/);
+  assert.match(releaseScript, /upgrade-dead-letter\.sql/);
 });

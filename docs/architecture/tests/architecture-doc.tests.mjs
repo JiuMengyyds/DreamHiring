@@ -217,6 +217,30 @@ test("工程规范与开发指南记录生产部署基线", () => {
   return Promise.all([access(deploymentTests), access(productionConfig)]);
 });
 
+test("工程规范与开发指南记录死信归档与重投", () => {
+  for (const expected of [
+    "## 15. 死信归档与重投",
+    "`dead_letter_message`",
+    "`PENDING -> REPLAYING -> REPLAYED`",
+    "Publisher Confirm",
+    "`local` 消息模式不支持真实重投",
+  ]) {
+    assert.ok(guide.includes(expected), `缺少死信处理规范：${expected}`);
+  }
+
+  for (const expected of [
+    "### RabbitMQ 死信归档与重投",
+    "`ArchivingMessageRecoverer`",
+    "`DeadLetterService`",
+    "`RabbitDeadLetterReplayGateway`",
+    "`adminDeadLetterList`",
+    "`adminDeadLetterReplay`",
+    "重投成功不会删除 RabbitMQ DLQ 中的原消息",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少死信处理实现说明：${expected}`);
+  }
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];

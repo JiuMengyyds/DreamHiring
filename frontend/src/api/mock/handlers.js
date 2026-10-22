@@ -524,6 +524,27 @@ export function handleMockRequest(config) {
     }
   }
 
+  if (path === '/api/admin/dead-letters' && method === 'get') {
+    const check = requireRole(config, ['ADMIN'])
+    if (check.error) return check.error
+    const filtered = query.status
+      ? db.deadLetters.filter((item) => item.status === query.status)
+      : db.deadLetters
+    return ok(paginate(filtered, query.page, query.size))
+  }
+
+  if (path.startsWith('/api/admin/dead-letters/') && path.endsWith('/replay') && method === 'post') {
+    const check = requireRole(config, ['ADMIN'])
+    if (check.error) return check.error
+    const deadLetter = db.deadLetters.find((item) => item.id === Number(segment(3)))
+    if (!deadLetter) return fail(404, '死信消息不存在')
+    if (deadLetter.status !== 'PENDING') return fail(409, '死信消息正在重投或已经重投')
+    deadLetter.status = 'REPLAYED'
+    deadLetter.replayCount += 1
+    deadLetter.replayedAt = now
+    return ok(deadLetter)
+  }
+
   if (path === '/api/stats/dashboard' && method === 'get') return ok(db.dashboardStats)
   if (path === '/api/stats/trend' && method === 'get') return ok(db.dashboardStats.trend)
   if (path === '/api/stats/hot-skills' && method === 'get') return ok(db.dashboardStats.hotSkills)

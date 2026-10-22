@@ -20,7 +20,8 @@ deploy/releases/dreamhiring-yyyyMMdd-HHmmss/
 ├── deploy/
 │   ├── dreamhiring.conf
 │   ├── dreamhiring-backend.service
-│   └── .env.production.example
+│   ├── .env.production.example
+│   └── db/
 └── release-manifest.json
 ```
 
@@ -43,13 +44,14 @@ deploy/releases/dreamhiring-yyyyMMdd-HHmmss/
 
 1. 安装 JDK 21、MySQL 8、Redis、RabbitMQ 和 Nginx。
 2. 创建无登录权限的 `dreamhiring` 系统用户及上述目录。
-3. 将发布包中的 `frontend/` 上传到 `/srv/dreamhiring/frontend`。
-4. 将 `backend.jar` 上传到 `/opt/dreamhiring/backend.jar`。
-5. 复制 `.env.production.example` 为 `/etc/dreamhiring/dreamhiring.env`，填写真实配置并执行 `chmod 600`。
-6. 将 `dreamhiring.conf` 放入 `/etc/nginx/conf.d/`。
-7. 将 `dreamhiring-backend.service` 放入 `/etc/systemd/system/`。
-8. 执行 `systemctl daemon-reload`、`systemctl enable --now dreamhiring-backend` 和 `nginx -t`。
-9. Nginx 配置验证通过后执行 `systemctl reload nginx`。
+3. 首次部署执行 `deploy/db/mysql-schema.sql`；已有数据库升级执行 `deploy/db/upgrade-dead-letter.sql`。
+4. 将发布包中的 `frontend/` 上传到 `/srv/dreamhiring/frontend`。
+5. 将 `backend.jar` 上传到 `/opt/dreamhiring/backend.jar`。
+6. 复制 `.env.production.example` 为 `/etc/dreamhiring/dreamhiring.env`，填写真实配置并执行 `chmod 600`。
+7. 将 `dreamhiring.conf` 放入 `/etc/nginx/conf.d/`。
+8. 将 `dreamhiring-backend.service` 放入 `/etc/systemd/system/`。
+9. 执行 `systemctl daemon-reload`、`systemctl enable --now dreamhiring-backend` 和 `nginx -t`。
+10. Nginx 配置验证通过后执行 `systemctl reload nginx`。
 
 生产后端默认只监听 `127.0.0.1:8080`，外部流量统一从 Nginx 进入。前端使用同源 `/api`，生产环境不再依赖浏览器跨域。
 

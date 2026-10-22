@@ -202,6 +202,8 @@ Content-Type: application/json
 | ADMIN-ANNOUNCEMENT-02 | POST | `/api/admin/announcements` | 创建公告 | ADMIN | `adminAnnouncementCreate` |
 | ADMIN-ANNOUNCEMENT-03 | PUT | `/api/admin/announcements/{announcementId}` | 更新公告 | ADMIN | `adminAnnouncementUpdate` |
 | ADMIN-ANNOUNCEMENT-04 | DELETE | `/api/admin/announcements/{announcementId}` | 删除公告 | ADMIN | `adminAnnouncementDelete` |
+| ADMIN-DEAD-01 | GET | `/api/admin/dead-letters` | 查询死信归档 | ADMIN | `adminDeadLetterList` |
+| ADMIN-DEAD-02 | POST | `/api/admin/dead-letters/{deadLetterId}/replay` | 重投死信消息 | ADMIN | `adminDeadLetterReplay` |
 
 ### 4.8 数据洞察
 
@@ -222,6 +224,7 @@ Content-Type: application/json
 | 审核状态 | `PENDING`, `APPROVED`, `REJECTED` |
 | 公告状态 | `DRAFT`, `PUBLISHED`, `OFFLINE` |
 | 公告触达范围 | `ALL`, `SEEKER`, `COMPANY` |
+| 死信归档状态 | `PENDING`, `REPLAYING`, `REPLAYED` |
 
 ### 5.2 职位状态
 
@@ -321,6 +324,16 @@ matchScore = round(matchedWeight / totalJobWeight × 100)
 - 存在子分类时返回 `409`，错误语义为 `CATEGORY_HAS_CHILDREN`。
 - 被职位引用时返回 `409`，错误语义为 `CATEGORY_IN_USE`。
 - 不得级联删除子分类，不得自动迁移职位，也不得自动删除关联职位。
+
+### 6.6 RabbitMQ 死信处理
+
+- 消费者失败会按 3 次重试策略执行；重试耗尽后先写入 `dead_letter_message` 归档，再拒绝消息并进入 RabbitMQ DLQ。
+- 归档保存原队列、交换机、路由键、消息 ID、消息体、请求头、失败原因和重投状态。
+- `GET /api/admin/dead-letters` 仅供 ADMIN 查询，可按 `PENDING`、`REPLAYING`、`REPLAYED` 筛选。
+- 重投只允许处理 `PENDING` 消息；系统先原子切换为 `REPLAYING`，防止重复点击并发重投。
+- 重投发送到原交换机和原路由键，其中发布确认超时或发送失败时恢复为 `PENDING`。
+- 重投成功标记为 `REPLAYED`，但不会从 RabbitMQ DLQ 中移除原消息。消费者必须依靠业务幂等键处理重复投递。
+- `local` 消息模式不具备 RabbitMQ 重投能力，重投接口返回 `422`。
 
 ## 7. 错误响应
 
@@ -465,4 +478,4 @@ node .\docs\api\generate-openapi.mjs
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\docs\api\tests\run-tests.ps1
 ```
 
-契约测试会检查 OpenAPI 版本、64 个操作、全部 `$ref`、角色声明、核心状态枚举、统一响应结构、GMT+8 日期时间格式、OSS 对象字段，以及 Markdown 与 OpenAPI 的 operationId 是否一致。
+契约测试会检查 OpenAPI 版本、66 个操作、全部 `$ref`、角色声明、核心状态枚举、统一响应结构、GMT+8 日期时间格式、OSS 对象字段，以及 Markdown 与 OpenAPI 的 operationId 是否一致。

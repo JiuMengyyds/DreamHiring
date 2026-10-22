@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS analysis_hot_skill;
 DROP TABLE IF EXISTS analysis_stat;
 DROP TABLE IF EXISTS operation_log;
 DROP TABLE IF EXISTS message;
+DROP TABLE IF EXISTS dead_letter_message;
 DROP TABLE IF EXISTS announcement;
 DROP TABLE IF EXISTS application;
 DROP TABLE IF EXISTS resume;
@@ -125,6 +126,24 @@ CREATE TABLE message (
     create_time TIMESTAMP NOT NULL,
     deleted TINYINT NOT NULL DEFAULT 0,
     UNIQUE (dedup_key)
+);
+
+CREATE TABLE dead_letter_message (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    queue_name VARCHAR(120) NOT NULL,
+    exchange_name VARCHAR(120) NOT NULL,
+    routing_key VARCHAR(150) NOT NULL,
+    message_id VARCHAR(100),
+    correlation_id VARCHAR(100),
+    message_body LONGTEXT NOT NULL,
+    content_type VARCHAR(100),
+    headers_json LONGTEXT,
+    failure_reason VARCHAR(1000),
+    status VARCHAR(20) NOT NULL,
+    replay_count INT NOT NULL DEFAULT 0,
+    create_time TIMESTAMP NOT NULL,
+    update_time TIMESTAMP NOT NULL,
+    replay_time TIMESTAMP
 );
 
 CREATE TABLE announcement (

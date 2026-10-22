@@ -65,7 +65,7 @@ test("OpenAPI 文件与生成器输出一致且结构有效", () => {
 });
 
 test("接口数量、operationId 与基础响应满足契约", () => {
-  assert.equal(operations.length, 64, "V1.0 应维持 64 个操作");
+  assert.equal(operations.length, 66, "V1.0 应维持 66 个操作");
 
   const operationIds = operations.map(({ operation }) => operation.operationId);
   assert.equal(new Set(operationIds).size, operationIds.length, "operationId 不能重复");
@@ -244,7 +244,7 @@ test("Markdown 文档覆盖全部接口与核心规则", () => {
   assert.match(readme, /同一 `resumeId \+ jobId` 只允许存在一条有效投递/);
   assert.match(readme, /JWT 默认有效期 2 小时/);
   assert.match(readme, /验证码保存在 Redis/);
-  assert.match(readme, /64 个操作/);
+  assert.match(readme, /66 个操作/);
   assert.match(readme, /yyyy-MM-dd HH:mm:ss/);
   assert.match(readme, /时区固定为 GMT\+8/);
   assert.match(readme, /OSS 对象存储/);
@@ -276,4 +276,23 @@ test("数据大屏使用天池中文数据且明确样本口径与许可证风�
   assert.match(readme, /许可证.*尚未确认/);
   assert.match(readme, /原始 CSV 不进入 Git/);
   assert.doesNotMatch(readme, /英文技能数据集/);
+});
+
+test("死信管理接口具备管理员权限、状态机和幂等语义", () => {
+  const list = operationsById.get("adminDeadLetterList");
+  assert.deepEqual(list["x-roles"], ["ADMIN"]);
+  assert.match(list.description, /重试耗尽/);
+
+  const replay = operationsById.get("adminDeadLetterReplay");
+  assert.deepEqual(replay["x-roles"], ["ADMIN"]);
+  assert.match(replay.description, /PENDING/);
+  assert.match(replay.description, /REPLAYING/);
+  assert.match(replay.description, /消费者必须保持幂等/);
+  assert.ok(replay.responses["409"]);
+  assert.ok(replay.responses["422"]);
+
+  const deadLetter = openApi.components.schemas.DeadLetter;
+  assert.deepEqual(deadLetter.properties.status.enum, ["PENDING", "REPLAYING", "REPLAYED"]);
+  assert.ok(deadLetter.required.includes("messageBody"));
+  assert.ok(deadLetter.required.includes("headers"));
 });

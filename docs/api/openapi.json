@@ -3267,6 +3267,102 @@
         }
       }
     },
+    "/api/admin/dead-letters": {
+      "get": {
+        "tags": [
+          "平台管理"
+        ],
+        "summary": "查询 RabbitMQ 死信归档",
+        "description": "分页查询消费者重试耗尽后归档的死信消息，可按处理状态筛选。归档保存原始队列、交换机、路由键、消息体、请求头和失败原因，便于排查和重投。",
+        "operationId": "adminDeadLetterList",
+        "x-roles": [
+          "ADMIN"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeadLetterStatus"
+          },
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/Size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeadLetterPageResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/api/admin/dead-letters/{deadLetterId}/replay": {
+      "post": {
+        "tags": [
+          "平台管理"
+        ],
+        "summary": "重投死信消息",
+        "description": "把 PENDING 死信消息重新发送到原交换机和原路由键。重投前原子切换为 REPLAYING，发送失败会恢复 PENDING；发送成功标记 REPLAYED。该操作不删除 RabbitMQ 中的原死信，消费者必须保持幂等。",
+        "operationId": "adminDeadLetterReplay",
+        "x-roles": [
+          "ADMIN"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DeadLetterId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "请求成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeadLetterResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/api/stats/dashboard": {
       "get": {
         "tags": [
@@ -3673,6 +3769,20 @@
           ]
         }
       },
+      "DeadLetterStatus": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "description": "死信归档状态",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "REPLAYING",
+            "REPLAYED"
+          ]
+        }
+      },
       "Months": {
         "name": "months",
         "in": "query",
@@ -3767,6 +3877,17 @@
         "in": "path",
         "required": true,
         "description": "公告 ID",
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        }
+      },
+      "DeadLetterId": {
+        "name": "deadLetterId",
+        "in": "path",
+        "required": true,
+        "description": "死信归档 ID",
         "schema": {
           "type": "integer",
           "format": "int64",
@@ -4869,6 +4990,152 @@
             "properties": {
               "data": {
                 "$ref": "#/components/schemas/Announcement"
+              }
+            }
+          }
+        ]
+      },
+      "DeadLetter": {
+        "type": "object",
+        "required": [
+          "id",
+          "queueName",
+          "exchangeName",
+          "routingKey",
+          "messageBody",
+          "headers",
+          "status",
+          "replayCount",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "queueName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "exchangeName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "routingKey": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "messageId": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "messageBody": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "failureReason": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "REPLAYING",
+              "REPLAYED"
+            ]
+          },
+          "replayCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00"
+          },
+          "replayedAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "description": "北京时间，时区固定为 GMT+8",
+            "example": "2026-10-20 12:30:00",
+            "nullable": true
+          }
+        }
+      },
+      "DeadLetterPage": {
+        "type": "object",
+        "required": [
+          "records",
+          "total",
+          "page",
+          "size"
+        ],
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeadLetter"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
+      "DeadLetterPageResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiResult"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DeadLetterPage"
+              }
+            }
+          }
+        ]
+      },
+      "DeadLetterResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiResult"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "$ref": "#/components/schemas/DeadLetter"
               }
             }
           }

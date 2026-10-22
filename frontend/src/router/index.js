@@ -31,6 +31,7 @@ const routes = [
       { path: 'admin/users', name: 'admin-users', component: () => import('../views/admin/UsersView.vue'), meta: { title: '用户管理', roles: ['ADMIN'] } },
       { path: 'admin/companies', name: 'admin-companies', component: () => import('../views/admin/CompaniesView.vue'), meta: { title: '企业管理', roles: ['ADMIN'] } },
       { path: 'admin/content', name: 'admin-content', component: () => import('../views/admin/ContentView.vue'), meta: { title: '分类与公告', roles: ['ADMIN'] } },
+      { path: 'admin/dead-letters', name: 'admin-dead-letters', component: () => import('../views/admin/DeadLettersView.vue'), meta: { title: '死信管理', roles: ['ADMIN'] } },
     ],
   },
   {

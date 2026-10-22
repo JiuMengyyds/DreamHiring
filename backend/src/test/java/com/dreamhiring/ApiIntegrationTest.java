@@ -56,7 +56,7 @@ class ApiIntegrationTest {
         long count = handlerMapping.getHandlerMethods().values().stream()
                 .filter(handler -> handler.getBeanType().getPackageName().startsWith("com.dreamhiring.controller"))
                 .count();
-        org.assertj.core.api.Assertions.assertThat(count).isEqualTo(64);
+        org.assertj.core.api.Assertions.assertThat(count).isEqualTo(66);
     }
 
     @Test
@@ -142,6 +142,29 @@ class ApiIntegrationTest {
         mockMvc.perform(get("/api/company/applications").header(HttpHeaders.AUTHORIZATION, token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.records[0].resume.name").value("林知夏"));
+    }
+
+    @Test
+    void adminShouldInspectDeadLettersAndLocalReplayShouldFailSafely() throws Exception {
+        String token = bearer("admin_zhou");
+        mockMvc.perform(get("/api/admin/dead-letters")
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.records[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.data.records[0].queueName")
+                        .value("dreamhiring.notification.queue"));
+
+        mockMvc.perform(post("/api/admin/dead-letters/1/replay")
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value(422));
+
+        mockMvc.perform(get("/api/admin/dead-letters")
+                        .queryParam("status", "PENDING")
+                        .header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.records[0].status").value("PENDING"));
     }
 
     @Test

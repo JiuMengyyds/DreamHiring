@@ -20,6 +20,7 @@ export const navByRole = {
     { label: '用户管理', route: '/admin/users', icon: 'UserFilled' },
     { label: '企业管理', route: '/admin/companies', icon: 'OfficeBuilding' },
     { label: '分类与公告', route: '/admin/content', icon: 'Bell' },
+    { label: '死信管理', route: '/admin/dead-letters', icon: 'Warning' },
     { label: '数据看板', route: '/dashboard', icon: 'DataAnalysis' },
   ],
 }

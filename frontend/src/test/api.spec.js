@@ -34,6 +34,19 @@ describe('mock API contract', () => {
     await expect(adminApi.deleteCategory(1)).rejects.toMatchObject({ code: 409 })
   })
 
+  it('lists and replays a pending dead letter', async () => {
+    localStorage.setItem('dreamhiring_token', 'mock-token-admin_zhou')
+    const page = await adminApi.deadLetters({ status: 'PENDING', page: 1, size: 10 })
+    expect(page.records[0]).toMatchObject({
+      queueName: 'dreamhiring.notification.queue',
+      status: 'PENDING',
+    })
+
+    const replayed = await adminApi.replayDeadLetter(page.records[0].id)
+    expect(replayed).toMatchObject({ status: 'REPLAYED', replayCount: 1 })
+    await expect(adminApi.replayDeadLetter(replayed.id)).rejects.toMatchObject({ code: 409 })
+  })
+
   it('supports company auditing and resolves the default resume dynamically', async () => {
     localStorage.setItem('dreamhiring_token', 'mock-token-admin_zhou')
     const company = await adminApi.auditCompany(3, { auditStatus: 'APPROVED', reason: '' })

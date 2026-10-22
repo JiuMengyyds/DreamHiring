@@ -28,6 +28,29 @@ VALUES (1, 1, 1, 1, 'INTERVIEW', 100, '安排第一轮面试', CURRENT_TIMESTAMP
 INSERT INTO message (id, receiver_id, type, title, content, related_id, dedup_key, is_read, create_time)
 VALUES (1, 1, 'APPLICATION', '星云科技邀请你参加面试', '请确认面试时间。', 1, 'LEGACY:1', 0, CURRENT_TIMESTAMP);
 
+INSERT INTO dead_letter_message (
+    id, queue_name, exchange_name, routing_key, message_id, correlation_id,
+    message_body, content_type, headers_json, failure_reason, status,
+    replay_count, create_time, update_time, replay_time
+)
+VALUES (
+    1,
+    'dreamhiring.notification.queue',
+    'dreamhiring.notification.exchange',
+    'application.status.changed',
+    'test-message-1',
+    'test-correlation-1',
+    '{"applicationId":1,"receiverId":1,"jobTitle":"高级产品设计师","status":"INTERVIEW"}',
+    'application/json',
+    '{}',
+    'IllegalStateException: database unavailable',
+    'PENDING',
+    0,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    NULL
+);
+
 INSERT INTO announcement (id, title, summary, content, channel, status, publisher_id, publish_time, create_time, update_time)
 VALUES (1, '2026 秋季招聘服务保障说明', '秋招期间将加强审核响应。', '平台已开启秋招专项服务保障。', 'ALL', 'PUBLISHED', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 

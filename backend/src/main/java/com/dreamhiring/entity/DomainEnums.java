@@ -58,6 +58,12 @@ public final class DomainEnums {
         SYSTEM
     }
 
+    public enum DeadLetterStatus {
+        PENDING,
+        REPLAYING,
+        REPLAYED
+    }
+
     public enum AnnouncementStatus {
         DRAFT,
         PUBLISHED,
