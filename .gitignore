@@ -20,6 +20,7 @@ erl_crash.dump
 .idea/
 
 # Private engineering documents
+AGENTS.md
 docs/architecture/backend-engineering-guidelines.md
 
 # Unused static assets

@@ -34,6 +34,7 @@ function isTracked(relativePath) {
 
 test("私有工程文档和未使用静态资源不进入版本库", () => {
   for (const relativePath of [
+    "AGENTS.md",
     "docs/architecture/backend-engineering-guidelines.md",
     "frontend/public/icons.svg",
     "frontend/src/assets/hero.png",
