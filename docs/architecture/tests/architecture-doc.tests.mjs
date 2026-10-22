@@ -71,16 +71,35 @@ test("接口文档链接到后端工程规范", async () => {
   await access(guidePath);
 });
 
-test("DevelopmentGuide 为每个后端 Java 类记录实现方式", async () => {
+test("DevelopmentGuide 为每个后端 Java 类记录完整实现说明", async () => {
   const javaFiles = await collectFiles(javaSourceRoot, ".java");
   const normalizedGuide = developmentGuide.replaceAll("\\", "/");
 
   assert.ok(javaFiles.length >= 100, `后端 Java 类数量异常：${javaFiles.length}`);
   for (const javaFile of javaFiles) {
+    const className = path.basename(javaFile, ".java");
     const relativePath = path.relative(projectRoot, javaFile).replaceAll("\\", "/");
+    const heading = `##### \`${className}\``;
+    const headingIndex = normalizedGuide.indexOf(heading);
     assert.ok(
-      normalizedGuide.includes(`\`${relativePath}\``),
+      headingIndex >= 0,
       `DevelopmentGuide 缺少类实现说明：${relativePath}`,
+    );
+
+    const nextHeadingIndex = normalizedGuide.indexOf("\n##### ", headingIndex + heading.length);
+    const section = normalizedGuide.slice(
+      headingIndex,
+      nextHeadingIndex === -1 ? undefined : nextHeadingIndex,
+    );
+    for (const requiredSection of ["###### 功能目标", "###### 涉及文件", "###### 实现思路"]) {
+      assert.ok(
+        section.includes(requiredSection),
+        `${className} 缺少文档章节：${requiredSection}`,
+      );
+    }
+    assert.ok(
+      section.includes(relativePath),
+      `${className} 的详细条目未引用源文件：${relativePath}`,
     );
   }
 });
