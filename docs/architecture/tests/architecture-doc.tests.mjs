@@ -118,6 +118,20 @@ test("DevelopmentGuide 记录前端真实后端联调模块", () => {
   }
 });
 
+test("DevelopmentGuide 记录招聘业务全链路闭环", () => {
+  for (const expected of [
+    "### 招聘业务全链路闭环",
+    "登录/注册模式切换",
+    "首份简历创建",
+    "OSS 附件上传",
+    "企业认证通过后才允许职位发布",
+    "一级和二级分类",
+    "`APPLICATION` 消息",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少业务闭环说明：${expected}`);
+  }
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
