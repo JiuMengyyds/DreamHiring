@@ -132,6 +132,19 @@ test("DevelopmentGuide 记录招聘业务全链路闭环", () => {
   }
 });
 
+test("DevelopmentGuide 记录公告 RabbitMQ 通知链路", () => {
+  for (const expected of [
+    "### 公告 RabbitMQ 站内消息链路",
+    "`AnnouncementPublishedEvent`",
+    "dreamhiring.announcement.queue",
+    "`afterCommit`",
+    "`ANNOUNCEMENT:{公告ID}:{用户ID}`",
+    "SEEKER 公告只有求职者收到",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少公告通知说明：${expected}`);
+  }
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
