@@ -43,30 +43,38 @@ const routes = [
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-})
+export function createAppRouter(history = createWebHistory()) {
+  const router = createRouter({
+    history,
+    routes,
+  })
 
-router.beforeEach(async (to) => {
-  const auth = useAuthStore()
-  document.title = `${to.meta.title || 'DreamHiring'} · DreamHiring`
-  const identityValid = await auth.ensureIdentity()
+  router.beforeEach(async (to) => {
+    const auth = useAuthStore()
+    document.title = `${to.meta.title || 'DreamHiring'} · DreamHiring`
+    const identityValid = await auth.ensureIdentity()
 
-  if (to.meta.public) {
-    if (identityValid) return ROLE_HOME[auth.role] || '/login'
+    if (to.meta.public) {
+      if (identityValid) return ROLE_HOME[auth.role] || '/login'
+      return true
+    }
+
+    if (!identityValid) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
+
+    if (to.path === '/') {
+      return ROLE_HOME[auth.role] || '/login'
+    }
+
+    if (to.meta.roles && !to.meta.roles.includes(auth.role)) {
+      return ROLE_HOME[auth.role] || '/login'
+    }
+
     return true
-  }
+  })
 
-  if (!identityValid) {
-    return { name: 'login', query: { redirect: to.fullPath } }
-  }
+  return router
+}
 
-  if (to.meta.roles && !to.meta.roles.includes(auth.role)) {
-    return ROLE_HOME[auth.role] || '/login'
-  }
-
-  return true
-})
-
-export default router
+export default createAppRouter()

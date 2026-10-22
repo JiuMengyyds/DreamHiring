@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../../stores/auth.js'
 import { ROLE_HOME, ROLE_LABELS } from '../../utils/constants.js'
+import { resolveLoginDestination } from '../../utils/navigation.js'
 import { authApi } from '../../api/index.js'
 import { isMockMode } from '../../utils/runtime.js'
 import CaptchaImage from '../../components/CaptchaImage.vue'
@@ -93,7 +94,7 @@ async function submitLogin() {
       captchaCode: form.captchaCode,
     })
     ElMessage.success('登录成功')
-    router.push(route.query.redirect || ROLE_HOME[user.role])
+    router.push(resolveLoginDestination(route.query.redirect, user.role))
   } catch (error) {
     ElMessage.error(error.message || '登录失败')
     form.captchaCode = ''
