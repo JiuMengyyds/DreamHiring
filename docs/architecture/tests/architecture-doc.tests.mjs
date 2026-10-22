@@ -14,12 +14,19 @@ const developmentGuidePath = path.join(projectRoot, "DevelopmentGuide.md");
 const javaSourceRoot = path.join(projectRoot, "backend", "src", "main", "java");
 
 const [guide, apiReadme, developmentGuide] = await Promise.all([
-  readFile(guidePath, "utf8"),
+  readOptionalFile(guidePath),
   readFile(apiReadmePath, "utf8"),
-  readFile(developmentGuidePath, "utf8"),
+  readOptionalFile(developmentGuidePath),
 ]);
+const privateDocsAvailable = guide !== null && developmentGuide !== null;
 
-test("后端工程规范包含借鉴与禁止照搬边界", () => {
+function testWithPrivateDocs(name, fn) {
+  test(name, {
+    skip: privateDocsAvailable ? false : "私有工程文档未包含在公开仓库中",
+  }, fn);
+}
+
+testWithPrivateDocs("后端工程规范包含借鉴与禁止照搬边界", () => {
   for (const section of [
     "## 2. 可借鉴与禁止照搬",
     "### 2.1 可以借鉴",
@@ -43,7 +50,7 @@ test("后端工程规范包含借鉴与禁止照搬边界", () => {
   }
 });
 
-test("工程结构与关键技术决策符合 DreamHiring 基线", () => {
+testWithPrivateDocs("工程结构与关键技术决策符合 DreamHiring 基线", () => {
   for (const expected of [
     "JDK 21、Spring Boot 3",
     "V1.0 采用单 Maven 模块",
@@ -63,15 +70,11 @@ test("工程结构与关键技术决策符合 DreamHiring 基线", () => {
   }
 });
 
-test("接口文档链接到后端工程规范", async () => {
-  assert.match(
-    apiReadme,
-    /\[后端工程实施规范\]\(\.\.\/architecture\/backend-engineering-guidelines\.md\)/,
-  );
-  await access(guidePath);
+test("接口文档不依赖未发布的私有工程规范", () => {
+  assert.doesNotMatch(apiReadme, /backend-engineering-guidelines\.md/);
 });
 
-test("DevelopmentGuide 为每个后端 Java 类记录完整实现说明", async () => {
+testWithPrivateDocs("DevelopmentGuide 为每个后端 Java 类记录完整实现说明", async () => {
   const javaFiles = await collectFiles(javaSourceRoot, ".java");
   const normalizedGuide = developmentGuide.replaceAll("\\", "/");
 
@@ -104,7 +107,7 @@ test("DevelopmentGuide 为每个后端 Java 类记录完整实现说明", async 
   }
 });
 
-test("DevelopmentGuide 记录前端真实后端联调模块", () => {
+testWithPrivateDocs("DevelopmentGuide 记录前端真实后端联调模块", () => {
   for (const expected of [
     "### 前端真实后端联调基础模块",
     "`VITE_USE_MOCK=false`",
@@ -118,7 +121,7 @@ test("DevelopmentGuide 记录前端真实后端联调模块", () => {
   }
 });
 
-test("DevelopmentGuide 记录招聘业务全链路闭环", () => {
+testWithPrivateDocs("DevelopmentGuide 记录招聘业务全链路闭环", () => {
   for (const expected of [
     "### 招聘业务全链路闭环",
     "登录/注册模式切换",
@@ -132,7 +135,7 @@ test("DevelopmentGuide 记录招聘业务全链路闭环", () => {
   }
 });
 
-test("DevelopmentGuide 记录公告 RabbitMQ 通知链路", () => {
+testWithPrivateDocs("DevelopmentGuide 记录公告 RabbitMQ 通知链路", () => {
   for (const expected of [
     "### 公告 RabbitMQ 站内消息链路",
     "`AnnouncementPublishedEvent`",
@@ -145,7 +148,7 @@ test("DevelopmentGuide 记录公告 RabbitMQ 通知链路", () => {
   }
 });
 
-test("DevelopmentGuide 记录认证接口限流模块", () => {
+testWithPrivateDocs("DevelopmentGuide 记录认证接口限流模块", () => {
   for (const expected of [
     "### 认证接口限流",
     "`RateLimitService`",
@@ -158,7 +161,7 @@ test("DevelopmentGuide 记录认证接口限流模块", () => {
   }
 });
 
-test("工程规范与开发指南记录天池离线分析约定", () => {
+testWithPrivateDocs("工程规范与开发指南记录天池离线分析约定", () => {
   for (const expected of [
     "## 13. 离线数据分析线",
     "tianchi.aliyun.com/dataset/163746",
@@ -182,7 +185,7 @@ test("工程规范与开发指南记录天池离线分析约定", () => {
   }
 });
 
-test("工程规范与开发指南记录生产部署基线", () => {
+testWithPrivateDocs("工程规范与开发指南记录生产部署基线", () => {
   for (const expected of [
     "## 14. 生产配置与部署",
     "`application-prod.yml`",
@@ -217,7 +220,7 @@ test("工程规范与开发指南记录生产部署基线", () => {
   return Promise.all([access(deploymentTests), access(productionConfig)]);
 });
 
-test("工程规范与开发指南记录死信归档与重投", () => {
+testWithPrivateDocs("工程规范与开发指南记录死信归档与重投", () => {
   for (const expected of [
     "## 15. 死信归档与重投",
     "`dead_letter_message`",
@@ -240,6 +243,17 @@ test("工程规范与开发指南记录死信归档与重投", () => {
     assert.ok(developmentGuide.includes(expected), `缺少死信处理实现说明：${expected}`);
   }
 });
+
+async function readOptionalFile(filePath) {
+  try {
+    return await readFile(filePath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
+}
 
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });

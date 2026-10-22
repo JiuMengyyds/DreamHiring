@@ -10,7 +10,7 @@
 
 本文件用于前后端评审和联调。`openapi.json` 是接口字段的机器可读基线，可直接导入 Apifox、Postman 或 Swagger UI；本文件补充业务规则、权限、状态机和调用示例。
 
-后端分层、编码、安全、事务、缓存、MQ 和 OSS 的实施约束见 [后端工程实施规范](../architecture/backend-engineering-guidelines.md)。
+后端分层、编码、安全、事务、缓存、MQ 和 OSS 的实施约束以项目内部工程规范为准，不随公开仓库发布。
 
 ## 1. 快速开始
 
