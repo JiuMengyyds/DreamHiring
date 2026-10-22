@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -85,20 +86,26 @@ class BusinessClosureIntegrationTest {
                 .header(HttpHeaders.AUTHORIZATION, bearer("chenyu_hr"))
                 .contentType("application/json")
                 .content(json(Map.of("status", "INTERVIEW", "remark", "安排第一轮面试"))), 200);
+        request(put("/api/company/applications/" + applicationId + "/status")
+                .header(HttpHeaders.AUTHORIZATION, bearer("chenyu_hr"))
+                .contentType("application/json")
+                .content(json(Map.of("status", "REJECTED", "remark", "面试后评估不匹配"))), 200);
 
         JsonNode messages = request(get("/api/messages")
                 .header(HttpHeaders.AUTHORIZATION, seekerToken)
                 .queryParam("page", "1")
                 .queryParam("size", "50"), 200);
-        boolean hasApplicationMessage = false;
+        List<String> applicationMessageContents = new ArrayList<>();
         for (JsonNode message : messages.path("records")) {
             if (message.path("type").asText().equals("APPLICATION")
                     && message.path("relatedId").asLong() == applicationId) {
-                hasApplicationMessage = true;
-                break;
+                applicationMessageContents.add(message.path("content").asText());
             }
         }
-        assertThat(hasApplicationMessage).isTrue();
+        assertThat(applicationMessageContents).containsExactlyInAnyOrder(
+                "你投递的「高级产品设计师」状态已更新为 邀面试",
+                "你投递的「高级产品设计师」状态已更新为 不合适"
+        );
 
         JsonNode companyAuth = register("closure_company_" + suffix, "回归企业", "COMPANY");
         String companyToken = bearer(companyAuth.path("accessToken").asText());

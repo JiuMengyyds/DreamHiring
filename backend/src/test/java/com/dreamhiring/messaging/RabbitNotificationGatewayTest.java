@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -69,7 +70,7 @@ class RabbitNotificationGatewayTest {
                 "投递状态更新",
                 "你投递的「产品设计师」状态已更新为 不合适",
                 2L,
-                "APPLICATION:2"
+                "APPLICATION:2:REJECTED"
         );
         verify(channel).basicAck(8L, false);
 
@@ -80,7 +81,7 @@ class RabbitNotificationGatewayTest {
                         "投递状态更新",
                         "你投递的「产品设计师」状态已更新为 不合适",
                         3L,
-                        "APPLICATION:3");
+                        "APPLICATION:3:REJECTED");
         ApplicationStatusChangedEvent retryEvent = new ApplicationStatusChangedEvent(
                 1L,
                 3L,
@@ -90,5 +91,27 @@ class RabbitNotificationGatewayTest {
         assertThatThrownBy(() -> consumer.receive(retryEvent, channel, 9L))
                 .isInstanceOf(IllegalStateException.class);
         verify(channel, never()).basicAck(9L, false);
+    }
+
+    @Test
+    void differentStatusesShouldUseDifferentDedupKeys() {
+        ApplicationStatusChangedEvent interview = new ApplicationStatusChangedEvent(
+                1L,
+                2L,
+                "产品设计师",
+                ApplicationStatus.INTERVIEW
+        );
+        ApplicationStatusChangedEvent rejected = new ApplicationStatusChangedEvent(
+                1L,
+                2L,
+                "产品设计师",
+                ApplicationStatus.REJECTED
+        );
+
+        assertThat(interview.notificationDedupKey())
+                .isEqualTo("APPLICATION:2:INTERVIEW");
+        assertThat(rejected.notificationDedupKey())
+                .isEqualTo("APPLICATION:2:REJECTED")
+                .isNotEqualTo(interview.notificationDedupKey());
     }
 }

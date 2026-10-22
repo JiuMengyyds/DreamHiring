@@ -8,4 +8,8 @@ public record ApplicationStatusChangedEvent(
         String jobTitle,
         ApplicationStatus status
 ) {
+
+    public String notificationDedupKey() {
+        return "APPLICATION:" + applicationId + ":" + status.name();
+    }
 }

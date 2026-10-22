@@ -251,7 +251,7 @@ DRAFT ──提交审核──> PENDING ──通过──> APPROVED/PUBLISHED �
 
 - 同一 `resumeId + jobId` 只允许存在一条有效投递，重复投递返回 `409`。
 - 投递创建时保存 `matchScore` 快照，后续简历修改不回溯已有投递。
-- `INTERVIEW` 或 `REJECTED` 成功后写站内消息事件；消费者按 `relatedId + type` 幂等写 `message` 表。
+- `INTERVIEW` 或 `REJECTED` 成功后写站内消息事件；消费者按 `applicationId + status` 构造幂等键，保证重复消费不重复写入，同时允许同一投递的后续状态继续通知。
 
 ### 5.4 消息类型
 

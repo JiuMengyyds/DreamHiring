@@ -1724,7 +1724,7 @@ export function buildOpenApi() {
           operationId: "companyApplicationUpdateStatus",
           roles: ["COMPANY"],
           description:
-            "按状态机处理候选人：PENDING_VIEW → VIEWED → INTERVIEW / REJECTED。状态变更成功后写入站内消息事件。",
+            "按状态机处理候选人：PENDING_VIEW → VIEWED → INTERVIEW / REJECTED。状态变更成功后写入站内消息事件；投递 ID 与目标状态共同构成幂等键，同一投递的后续合法状态仍会通知。",
           parameters: [parameterRef("ApplicationId")],
           requestBody: jsonBody("ApplicationStatusRequest"),
           successSchema: "ApplicationResult",

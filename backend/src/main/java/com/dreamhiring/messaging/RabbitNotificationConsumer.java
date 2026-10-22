@@ -33,7 +33,7 @@ public class RabbitNotificationConsumer {
                 "投递状态更新",
                 "你投递的「" + event.jobTitle() + "」状态已更新为 " + statusLabel(event),
                 event.applicationId(),
-                "APPLICATION:" + event.applicationId()
+                event.notificationDedupKey()
         );
         channel.basicAck(deliveryTag, false);
     }
