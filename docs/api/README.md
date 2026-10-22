@@ -426,7 +426,9 @@ Content-Type: application/json
 
 `GET /api/stats/dashboard` 的 `data` 同时返回：
 
-- `overview`：样本数、平均薪资、供需比、平均匹配度。
+- `overview.sampleCount`：离线数据源完成去重和四维校验后的有效样本数，不等同于平台在线职位数。
+- `overview.averageSalary`：有效分析样本的平均月薪，单位 K。
+- `overview.supplyDemandRatio`、`overview.averageMatchScore`：平台在线投递与匹配数据指标。
 - `salaryDistribution`
 - `cityDistribution`
 - `educationDistribution`
@@ -435,6 +437,15 @@ Content-Type: application/json
 - `trend`
 - `hotSkills`
 - `metadata`：数据源、统计日期和更新时间。
+
+V1.0 开发阶段的数据源为阿里云天池数据集 `163746`：
+
+- 数据页面：https://tianchi.aliyun.com/dataset/163746
+- 仅使用中文招聘数据；薪资、城市、学历、经验、行业和技能词频均来自该数据集。
+- 技能词频从中文职位描述按受控词典提取，不引入英文招聘数据集。
+- 原始 CSV 不进入 Git，统计接口只读取清洗后的聚合结果。
+- 数据集许可证截至开发时尚未确认，仅用于本地开发验证，不声明可再分发；正式公开演示前必须补齐授权依据。
+- 数据以数据分析相关岗位为主，且发布日期只有 `MM-DD`，不能将结果解释为全行业市场或跨年趋势。
 
 ## 9. 契约维护与验证
 

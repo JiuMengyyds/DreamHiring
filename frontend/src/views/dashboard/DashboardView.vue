@@ -115,13 +115,13 @@ onMounted(load)
       </el-button>
       <div>
         <h1>招聘数据洞察</h1>
-        <p v-if="stats">中文招聘数据集 {{ stats.metadata.sourceDataset }} · 统计日期 {{ stats.metadata.statDate }}</p>
+        <p v-if="stats">数据集 {{ stats.metadata.sourceDataset }} · 统计日期 {{ stats.metadata.statDate }}</p>
       </div>
     </header>
 
     <section v-if="stats" class="metric-grid" style="margin-bottom: 12px">
       <article class="chart-card">
-        <h3>有效职位样本</h3>
+        <h3>清洗后职位样本</h3>
         <div class="stat-card__value">{{ stats.overview.sampleCount.toLocaleString() }}</div>
       </article>
       <article class="chart-card">

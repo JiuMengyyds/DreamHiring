@@ -259,3 +259,21 @@ test("Markdown 文档覆盖全部接口与核心规则", () => {
   assert.match(readme, /### 6\.5 删除与数据保留/);
   assert.match(readme, /仅删除无业务关联的空账号/);
 });
+
+test("数据大屏使用天池中文数据且明确样本口径与许可证风险", () => {
+  const dashboard = openApi.components.schemas.DashboardStatsData;
+  assert.match(
+    dashboard.properties.overview.properties.sampleCount.description,
+    /有效样本数/,
+  );
+  assert.match(
+    dashboard.properties.overview.properties.sampleCount.description,
+    /不等同于平台在线职位数/,
+  );
+  assert.match(readme, /tianchi\.aliyun\.com\/dataset\/163746/);
+  assert.match(readme, /仅使用中文招聘数据/);
+  assert.match(readme, /不引入英文招聘数据集/);
+  assert.match(readme, /许可证.*尚未确认/);
+  assert.match(readme, /原始 CSV 不进入 Git/);
+  assert.doesNotMatch(readme, /英文技能数据集/);
+});

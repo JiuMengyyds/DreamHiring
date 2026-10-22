@@ -1223,8 +1223,16 @@ const schemas = {
         type: "object",
         required: ["sampleCount", "averageSalary", "supplyDemandRatio", "averageMatchScore"],
         properties: {
-          sampleCount: { type: "integer", minimum: 0 },
-          averageSalary: { type: "number", minimum: 0 },
+          sampleCount: {
+            type: "integer",
+            minimum: 0,
+            description: "离线数据源完成去重和四维校验后的有效样本数，不等同于平台在线职位数。",
+          },
+          averageSalary: {
+            type: "number",
+            minimum: 0,
+            description: "有效分析样本的平均月薪，单位 K；无分析结果时回退到平台职位均值。",
+          },
           supplyDemandRatio: { type: "number", minimum: 0 },
           averageMatchScore: { type: "number", minimum: 0, maximum: 100 },
         },
@@ -1261,7 +1269,10 @@ const schemas = {
         type: "object",
         required: ["sourceDataset", "statDate"],
         properties: {
-          sourceDataset: { type: "string" },
+          sourceDataset: {
+            type: "string",
+            description: "当前离线分析结果的数据集名称。",
+          },
           statDate: { type: "string", format: "date" },
           updatedAt: timestamp,
         },
@@ -2053,7 +2064,7 @@ export function buildOpenApi() {
           operationId: "statsDashboard",
           roles: ["PUBLIC"],
           description:
-            "一次返回薪资、城市、学历、经验、行业、招聘趋势和热门技能等图表数据，并附带数据源与统计日期。",
+            "一次返回薪资、城市、学历、经验、行业、招聘趋势和热门技能等图表数据，并附带数据源与统计日期。样本数和平均薪资来自离线清洗后的数据源；技能词频从中文职位描述提取，不依赖英文招聘数据集。",
           successSchema: "DashboardStatsResult",
           errors: ["serverError"],
         }),

@@ -21,6 +21,8 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 
+from adapters.tianchi_163746 import LoadedDataset, load_tianchi_163746
+
 
 SALARY_BINS = (
     ("8K以下", 0, 8),
@@ -32,21 +34,53 @@ SALARY_BINS = (
 )
 
 EDUCATION_MAP = {
+    "中专及以下": "中专及以下",
     "大专": "COLLEGE",
+    "专科": "大专",
     "本科": "BACHELOR",
     "硕士": "MASTER",
     "博士": "DOCTOR",
+    "不限": "UNLIMITED",
+    "COLLEGE": "大专",
+    "BACHELOR": "本科",
+    "MASTER": "硕士",
+    "DOCTOR": "博士",
+    "UNLIMITED": "不限",
 }
 
 EXPERIENCE_MAP = {
     "应届": "FRESH",
     "应届生": "FRESH",
+    "应届/无经验": "应届/无经验",
     "1年以下": "FRESH",
     "1-3年": "ONE_TO_THREE",
     "3-5年": "THREE_TO_FIVE",
     "5-10年": "FIVE_TO_TEN",
     "10年以上": "TEN_PLUS",
     "不限": "UNLIMITED",
+    "FRESH": "应届/无经验",
+    "ONE_TO_THREE": "1-3年",
+    "THREE_TO_FIVE": "3-5年",
+    "FIVE_TO_TEN": "5-10年",
+    "TEN_PLUS": "10年以上",
+    "UNLIMITED": "不限",
+}
+
+EDUCATION_DISPLAY_MAP = {
+    "COLLEGE": "大专",
+    "BACHELOR": "本科",
+    "MASTER": "硕士",
+    "DOCTOR": "博士",
+    "UNLIMITED": "不限",
+}
+
+EXPERIENCE_DISPLAY_MAP = {
+    "FRESH": "应届/无经验",
+    "ONE_TO_THREE": "1-3年",
+    "THREE_TO_FIVE": "3-5年",
+    "FIVE_TO_TEN": "5-10年",
+    "TEN_PLUS": "10年以上",
+    "UNLIMITED": "不限",
 }
 
 
@@ -63,7 +97,7 @@ class AnalysisSummary:
 
 
 def parse_salary(value: object) -> tuple[float, float] | tuple[None, None]:
-    """把 20-30K、20k-30k·14薪、1.5-2万 等文本统一为月薪 K。"""
+    """把常见月薪、年薪和日薪文本统一为月薪 K。"""
     if value is None or pd.isna(value):
         return None, None
     text = str(value).strip().lower().replace(" ", "")
@@ -72,11 +106,20 @@ def parse_salary(value: object) -> tuple[float, float] | tuple[None, None]:
     numbers = [float(item) for item in re.findall(r"\d+(?:\.\d+)?", text)]
     if not numbers:
         return None, None
-    multiplier = 1.0
-    if "万" in text:
+    if "万/年" in text or "万元/年" in text or "年薪" in text:
+        multiplier = 10.0 / 12.0
+    elif "元/天" in text or "元天" in text:
+        multiplier = 21.75 / 1000.0
+    elif "元/年" in text:
+        multiplier = 1.0 / 12_000.0
+    elif "元/月" in text:
+        multiplier = 0.001
+    elif "万" in text:
         multiplier = 10.0
     elif "元" in text and "k" not in text and "千" not in text:
         multiplier = 0.001
+    else:
+        multiplier = 1.0
     low = numbers[0] * multiplier
     high = numbers[1] * multiplier if len(numbers) > 1 else low
     if low > high:
@@ -98,10 +141,13 @@ def normalize_label(value: object, mapping: dict[str, str], fallback: str) -> st
     if value is None or pd.isna(value):
         return fallback
     text = str(value).strip()
-    return mapping.get(text, text or fallback)
+    mapped = mapping.get(text, text or fallback)
+    return mapped if mapped else fallback
 
 
 def split_skills(value: object) -> list[str]:
+    if isinstance(value, (list, tuple, set)):
+        return [str(item).strip() for item in value if str(item).strip()]
     if value is None or pd.isna(value):
         return []
     return [
@@ -143,9 +189,28 @@ def _salary_distribution(df: pd.DataFrame) -> list[tuple[str, float]]:
     ]
 
 
-def analyze(input_path: Path, source_dataset: str | None = None) -> tuple[pd.DataFrame, list[tuple[str, int]], AnalysisSummary]:
+def _load_input(input_path: Path, input_format: str) -> LoadedDataset:
+    if input_format == "tianchi-163746":
+        return load_tianchi_163746(input_path)
+    if input_format != "standard":
+        raise ValueError(f"不支持的输入格式: {input_format}")
     raw = pd.read_csv(input_path)
-    input_rows = len(raw)
+    return LoadedDataset(
+        frame=raw,
+        input_rows=len(raw),
+        exact_duplicate_rows=0,
+        business_duplicate_rows=0,
+    )
+
+
+def analyze(
+    input_path: Path,
+    source_dataset: str | None = None,
+    input_format: str = "standard",
+) -> tuple[pd.DataFrame, list[tuple[str, int]], AnalysisSummary]:
+    loaded = _load_input(input_path, input_format)
+    raw = loaded.frame
+    input_rows = loaded.input_rows
     required = {"title", "city"}
     missing = required.difference(raw.columns)
     if missing:
@@ -164,22 +229,43 @@ def analyze(input_path: Path, source_dataset: str | None = None) -> tuple[pd.Dat
         df["skills"] = ""
 
     df["city"] = df["city"].map(normalize_city)
+    df["title"] = df["title"].map(lambda value: str(value).strip() if not pd.isna(value) else "")
+    df = df[df["title"] != ""]
     invalid_city_rows = int(df["city"].isna().sum())
     df = df.dropna(subset=["city"])
-    before_dedup = len(df)
-    subset = [column for column in ("title", "company", "city", "salary") if column in df.columns]
-    df = df.drop_duplicates(subset=subset or None)
-    duplicate_rows = before_dedup - len(df)
 
     salary_pairs = df["salary"].map(parse_salary)
     df["salary_min"] = [item[0] for item in salary_pairs]
     df["salary_max"] = [item[1] for item in salary_pairs]
     df["salary_mid"] = df[["salary_min", "salary_max"]].mean(axis=1, skipna=True)
+    has_education = df["education"].notna() & (df["education"].astype(str).str.strip() != "")
+    has_experience = df["experience"].notna() & (df["experience"].astype(str).str.strip() != "")
+
+    if input_format == "tianchi-163746":
+        df = df.dropna(subset=["salary_mid"])
+        df = df[has_education.reindex(df.index, fill_value=False)]
+        df = df[has_experience.reindex(df.index, fill_value=False)]
+        duplicate_rows = loaded.duplicate_rows
+    else:
+        before_dedup = len(df)
+        subset = [column for column in ("title", "company", "city", "salary") if column in df.columns]
+        df = df.drop_duplicates(subset=subset or None)
+        duplicate_rows = loaded.duplicate_rows + before_dedup - len(df)
+
     df["education_label"] = df["education"].map(
-        lambda value: normalize_label(value, EDUCATION_MAP, "UNLIMITED")
+        lambda value: EDUCATION_DISPLAY_MAP.get(
+            normalize_label(value, EDUCATION_MAP, "UNLIMITED"),
+            normalize_label(value, EDUCATION_MAP, "UNLIMITED"),
+        )
     )
     df["experience_label"] = df["experience"].map(
-        lambda value: normalize_label(value, EXPERIENCE_MAP, "UNLIMITED")
+        lambda value: EXPERIENCE_DISPLAY_MAP.get(
+            normalize_label(value, EXPERIENCE_MAP, "UNLIMITED"),
+            normalize_label(value, EXPERIENCE_MAP, "UNLIMITED"),
+        )
+    )
+    df["industry"] = df["industry"].map(
+        lambda value: "未知" if pd.isna(value) or not str(value).strip() else str(value).strip()
     )
 
     distributions = {
@@ -192,6 +278,27 @@ def analyze(input_path: Path, source_dataset: str | None = None) -> tuple[pd.Dat
     stat_rows: list[dict[str, object]] = []
     dataset_name = source_dataset or input_path.stem
     analysis_date = datetime.now(ZoneInfo("Asia/Shanghai")).date()
+    stat_rows.append(
+        {
+            "dimension": "overview",
+            "dim_value": "sample_count",
+            "metric": "count",
+            "stat_value": len(df),
+            "source_dataset": dataset_name,
+            "stat_date": analysis_date,
+        }
+    )
+    if not df["salary_mid"].dropna().empty:
+        stat_rows.append(
+            {
+                "dimension": "overview",
+                "dim_value": "average_salary",
+                "metric": "average_k",
+                "stat_value": round(float(df["salary_mid"].mean()), 2),
+                "source_dataset": dataset_name,
+                "stat_date": analysis_date,
+            }
+        )
     for dimension, values in distributions.items():
         for value, percent in values:
             stat_rows.append(
@@ -293,6 +400,12 @@ def execute_sql(sql: str, database: str, mysql_binary: str) -> None:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="DreamHiring 招聘数据离线分析")
     parser.add_argument("--input", required=True, type=Path, help="招聘数据 CSV")
+    parser.add_argument(
+        "--format",
+        choices=("standard", "tianchi-163746"),
+        default="standard",
+        help="CSV 结构；天池 163746 使用 tianchi-163746",
+    )
     parser.add_argument("--output", type=Path, default=Path("analysis-output.sql"), help="SQL 输出路径")
     parser.add_argument("--source-dataset", help="数据集名称，默认使用文件名")
     parser.add_argument("--execute", action="store_true", help="生成后写入 MySQL")
@@ -305,7 +418,7 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     args = parse_args(argv)
-    stats, hot_skills, summary = analyze(args.input, args.source_dataset)
+    stats, hot_skills, summary = analyze(args.input, args.source_dataset, args.format)
     sql = build_sql(stats, hot_skills, summary)
     args.output.write_text(sql, encoding="utf-8")
     print(json.dumps(asdict(summary), ensure_ascii=False, indent=2))

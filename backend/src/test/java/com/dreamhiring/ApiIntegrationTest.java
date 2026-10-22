@@ -90,7 +90,11 @@ class ApiIntegrationTest {
 
         mockMvc.perform(get("/api/stats/dashboard"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.salaryDistribution").isArray());
+                .andExpect(jsonPath("$.data.salaryDistribution").isArray())
+                .andExpect(jsonPath("$.data.overview.sampleCount").value(21458))
+                .andExpect(jsonPath("$.data.overview.averageSalary").value(9.9))
+                .andExpect(jsonPath("$.data.metadata.sourceDataset")
+                        .value("阿里云天池-招聘数据分析数据集163746"));
     }
 
     @Test

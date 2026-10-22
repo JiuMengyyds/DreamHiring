@@ -33,14 +33,19 @@ VALUES (1, '2026 秋季招聘服务保障说明', '秋招期间将加强审核�
 
 INSERT INTO analysis_stat (dimension, dim_value, metric, stat_value, source_dataset, stat_date)
 VALUES
-    ('salary', '8-12K', 'percent', 18, '中文招聘数据集', CURRENT_DATE),
-    ('salary', '12-18K', 'percent', 32, '中文招聘数据集', CURRENT_DATE),
-    ('salary', '18-25K', 'percent', 24, '中文招聘数据集', CURRENT_DATE),
-    ('city', '杭州', 'percent', 15, '中文招聘数据集', CURRENT_DATE),
-    ('city', '上海', 'percent', 24, '中文招聘数据集', CURRENT_DATE),
-    ('education', '本科', 'percent', 42, '中文招聘数据集', CURRENT_DATE),
-    ('experience', '3-5年', 'percent', 31, '中文招聘数据集', CURRENT_DATE),
-    ('industry', '企业服务', 'percent', 18.6, '中文招聘数据集', CURRENT_DATE);
+    ('overview', 'sample_count', 'count', 21458, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('overview', 'average_salary', 'average_k', 9.91, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('salary', '8-12K', 'percent', 18, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('salary', '12-18K', 'percent', 32, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('salary', '18-25K', 'percent', 24, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('city', '杭州', 'percent', 15, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('city', '上海', 'percent', 24, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('education', '本科', 'percent', 42, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('experience', '3-5年', 'percent', 31, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('industry', '企业服务', 'percent', 18.6, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE);
 
 INSERT INTO analysis_hot_skill (skill, freq_count, source_dataset, stat_date)
-VALUES ('Python', 1680, '英文技能数据集', CURRENT_DATE), ('Java', 1510, '英文技能数据集', CURRENT_DATE), ('SQL', 1260, '英文技能数据集', CURRENT_DATE);
+VALUES
+    ('Python', 696, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('Java', 322, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE),
+    ('SQL', 698, '阿里云天池-招聘数据分析数据集163746', CURRENT_DATE);

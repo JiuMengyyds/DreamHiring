@@ -9,5 +9,6 @@ backend/src/main/resources/application-dev.yml
 # Generated analysis and runtime artifacts
 backend/analysis/*-output.sql
 backend/analysis/**/__pycache__/
+data/raw/
 erl_crash.dump
 *.log

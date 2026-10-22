@@ -158,6 +158,30 @@ test("DevelopmentGuide 记录认证接口限流模块", () => {
   }
 });
 
+test("工程规范与开发指南记录天池离线分析约定", () => {
+  for (const expected of [
+    "## 13. 离线数据分析线",
+    "tianchi.aliyun.com/dataset/163746",
+    "不引入英文招聘数据集",
+    "许可证尚未确认",
+    "`sampleCount` 表示清洗后的分析样本数",
+  ]) {
+    assert.ok(guide.includes(expected), `缺少离线分析规范：${expected}`);
+  }
+
+  for (const expected of [
+    "### 阿里云天池招聘数据分析线",
+    "`load_tianchi_163746`",
+    "`parse_salary`",
+    "`normalize_experience`",
+    "`overview/sample_count`",
+    "清洗后四维有效样本：21,458",
+    "不声明可以再分发",
+  ]) {
+    assert.ok(developmentGuide.includes(expected), `缺少天池分析实现说明：${expected}`);
+  }
+});
+
 async function collectFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];

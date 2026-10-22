@@ -13,6 +13,7 @@ import com.dreamhiring.vo.StatsViews.TrendPoint;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -40,11 +41,17 @@ public class StatsServiceImpl implements StatsService {
                 .map(AnalysisStat::getStatDate)
                 .max(LocalDate::compareTo)
                 .orElse(LocalDate.now());
-        String sourceDataset = stats.isEmpty() ? "中文招聘数据集" : stats.getFirst().getSourceDataset();
+        String sourceDataset = stats.isEmpty() ? "未配置分析数据集" : stats.getFirst().getSourceDataset();
+        long sampleCount = overviewValue(grouped.get("overview"), "sample_count")
+                .map(BigDecimal::longValue)
+                .orElseGet(() -> (long) statsMapper.countJobs());
+        double averageSalary = overviewValue(grouped.get("overview"), "average_salary")
+                .map(BigDecimal::doubleValue)
+                .orElseGet(statsMapper::averageSalary);
         return new Dashboard(
                 new Overview(
-                        statsMapper.countJobs(),
-                        round(statsMapper.averageSalary()),
+                        sampleCount,
+                        round(averageSalary),
                         ratio(statsMapper.countApplications(), statsMapper.countJobs()),
                         round(statsMapper.averageMatchScore())
                 ),
@@ -96,7 +103,7 @@ public class StatsServiceImpl implements StatsService {
         if (value == null) {
             return 0;
         }
-        return BigDecimal.valueOf(value).setScale(1, java.math.RoundingMode.HALF_UP).doubleValue();
+        return BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP).doubleValue();
     }
 
     private double ratio(int numerator, int denominator) {
@@ -111,5 +118,15 @@ public class StatsServiceImpl implements StatsService {
                 value -> YearMonth.from(value),
                 Collectors.counting()
         ));
+    }
+
+    private java.util.Optional<BigDecimal> overviewValue(List<AnalysisStat> stats, String name) {
+        if (stats == null) {
+            return java.util.Optional.empty();
+        }
+        return stats.stream()
+                .filter(stat -> name.equals(stat.getDimValue()))
+                .map(AnalysisStat::getStatValue)
+                .findFirst();
     }
 }
