@@ -13,6 +13,9 @@ const form = reactive({
   scale: '',
   city: '',
   intro: '',
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
 })
 
 async function load() {
@@ -52,6 +55,9 @@ onMounted(load)
           <el-form-item label="所属行业"><el-input v-model="form.industry" /></el-form-item>
           <el-form-item label="企业规模"><el-input v-model="form.scale" /></el-form-item>
           <el-form-item label="所在城市"><el-input v-model="form.city" /></el-form-item>
+          <el-form-item label="联系人"><el-input v-model="form.contactName" /></el-form-item>
+          <el-form-item label="联系电话"><el-input v-model="form.contactPhone" /></el-form-item>
+          <el-form-item label="联系邮箱"><el-input v-model="form.contactEmail" /></el-form-item>
         </div>
         <el-form-item label="企业简介">
           <el-input v-model="form.intro" type="textarea" :rows="4" />

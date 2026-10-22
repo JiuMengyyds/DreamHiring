@@ -47,16 +47,17 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   document.title = `${to.meta.title || 'DreamHiring'} · DreamHiring`
+  const identityValid = await auth.ensureIdentity()
 
   if (to.meta.public) {
-    if (auth.isAuthenticated) return ROLE_HOME[auth.role] || '/login'
+    if (identityValid) return ROLE_HOME[auth.role] || '/login'
     return true
   }
 
-  if (!auth.isAuthenticated) {
+  if (!identityValid) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 

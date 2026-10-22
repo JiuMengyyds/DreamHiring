@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { adminApi, authApi, jobApi } from '../api/index.js'
+import { adminApi, authApi, jobApi, resumeApi } from '../api/index.js'
+import { getDefaultResumeId } from '../utils/resume.js'
 
 describe('mock API contract', () => {
   it('logs in with demo credentials and fails with the agreed status codes', async () => {
@@ -31,5 +32,15 @@ describe('mock API contract', () => {
     localStorage.setItem('dreamhiring_token', 'mock-token-admin_zhou')
     await expect(adminApi.deleteUser(10001)).rejects.toMatchObject({ code: 409 })
     await expect(adminApi.deleteCategory(1)).rejects.toMatchObject({ code: 409 })
+  })
+
+  it('supports company auditing and resolves the default resume dynamically', async () => {
+    localStorage.setItem('dreamhiring_token', 'mock-token-admin_zhou')
+    const company = await adminApi.auditCompany(3, { auditStatus: 'APPROVED', reason: '' })
+    expect(company.auditStatus).toBe('APPROVED')
+
+    localStorage.setItem('dreamhiring_token', 'mock-token-linzhixia')
+    const resumes = await resumeApi.list()
+    expect(await getDefaultResumeId()).toBe(resumes.find((item) => item.isDefault).id)
   })
 })

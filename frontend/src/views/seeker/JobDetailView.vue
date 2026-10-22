@@ -7,10 +7,12 @@ import ScoreRing from '../../components/ScoreRing.vue'
 import { applicationApi, jobApi } from '../../api/index.js'
 import { EDUCATION_LABELS, EXPERIENCE_LABELS } from '../../utils/constants.js'
 import { formatSalary } from '../../utils/format.js'
+import { getDefaultResumeId } from '../../utils/resume.js'
 
 const route = useRoute()
 const router = useRouter()
 const job = ref(null)
+const resumeId = ref(null)
 const loading = ref(false)
 
 async function load() {
@@ -23,8 +25,12 @@ async function load() {
 }
 
 async function apply() {
+  if (!resumeId.value) {
+    ElMessage.warning('请先创建在线简历')
+    return
+  }
   try {
-    await applicationApi.create({ jobId: job.value.id, resumeId: 30001 })
+    await applicationApi.create({ jobId: job.value.id, resumeId: resumeId.value })
     ElMessage.success('投递成功')
     router.push('/seeker/applications')
   } catch (error) {
@@ -32,7 +38,12 @@ async function apply() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([
+    load(),
+    getDefaultResumeId().then((id) => { resumeId.value = id }),
+  ])
+})
 </script>
 
 <template>

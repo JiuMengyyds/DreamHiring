@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { navByRole } from '../router/nav.js'
 import { ROLE_LABELS, ROLE_HOME } from '../utils/constants.js'
 import { messageApi } from '../api/index.js'
+import { isMockMode } from '../utils/runtime.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +24,7 @@ function handleNav(routePath) {
 }
 
 function switchRole(role) {
+  if (!isMockMode) return
   const usernameByRole = { SEEKER: 'linzhixia', COMPANY: 'chenyu_hr', ADMIN: 'admin_zhou' }
   auth.token = `mock-token-${usernameByRole[role]}`
   auth.user = { ...auth.user, role }
@@ -59,7 +61,7 @@ onMounted(loadUnreadCount)
         </span>
       </div>
 
-      <div class="role-chip">
+      <div v-if="isMockMode" class="role-chip">
         <span>{{ ROLE_LABELS[auth.role] }}</span>
         <el-dropdown trigger="click" @command="switchRole">
           <button class="role-switch" type="button">切换视角</button>
@@ -71,6 +73,9 @@ onMounted(loadUnreadCount)
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+      </div>
+      <div v-else class="role-chip">
+        <span>{{ ROLE_LABELS[auth.role] }}</span>
       </div>
 
       <el-menu
@@ -86,7 +91,7 @@ onMounted(loadUnreadCount)
       </el-menu>
 
       <div class="sidebar-foot">
-        <div class="help-card">
+        <div v-if="isMockMode" class="help-card">
           <strong>演示模式</strong>
           <p>当前页面由本地 Mock 数据驱动，可点击切换角色体验完整链路。</p>
         </div>

@@ -35,7 +35,10 @@ src/
 ## Mock 开关
 
 - `.env.development` 中 `VITE_USE_MOCK=true` 时使用本地 Mock。
-- 改为 `false` 后通过 Axios 请求真实后端，接口契约与 `docs/api/openapi.json` 一致。
+- 新建 `.env.development.local` 并设置 `VITE_USE_MOCK=false` 后，通过 Axios 请求真实后端。
+- 本地真实联调建议同时设置 `VITE_API_BASE_URL=http://localhost:8080/api`，避免 Vite 开发服务器把 `/api` 当作自身路径。
+- 真实模式不会显示 Mock 角色切换，三个身份需要使用各自账号登录。
+- 登录页从后端加载图形验证码；验证码失败会刷新，账号密码错误的 401 只展示表单错误，不会触发全局退出跳转。
 
 演示账号：
 

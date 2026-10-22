@@ -2,22 +2,27 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHead from '../../components/PageHead.vue'
-import { companyApi } from '../../api/index.js'
+import { companyApi, jobApi } from '../../api/index.js'
 import { JOB_STATUS, AUDIT_STATUS } from '../../utils/constants.js'
 import { formatSalary } from '../../utils/format.js'
 
 const list = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
+const categories = ref([])
 const form = reactive({
   title: '',
+  categoryId: null,
   city: '杭州',
   salaryMin: 20,
   salaryMax: 30,
   education: 'BACHELOR',
   experience: 'THREE_TO_FIVE',
   skillTagsText: 'Figma，B端产品，设计系统',
-  description: '负责企业协同产品的体验设计。',
+  description: '负责企业协同产品的体验设计与体验优化，参与完整产品设计链路。',
+  dutiesText: '负责核心产品体验设计\n参与需求分析与方案评审',
+  requirementsText: '三年以上产品设计经验\n熟悉 B 端产品设计',
+  perksText: '弹性工作\n年度体检',
 })
 
 async function load() {
@@ -47,22 +52,28 @@ async function remove(row) {
 async function create() {
   const payload = {
     ...form,
-    categoryId: 12,
     salaryMin: Number(form.salaryMin),
     salaryMax: Number(form.salaryMax),
     skillTags: form.skillTagsText.split(/[，,]/).map((item) => item.trim()).filter(Boolean),
-    duties: [],
-    requirements: [],
-    perks: [],
+    duties: form.dutiesText.split('\n').map((item) => item.trim()).filter(Boolean),
+    requirements: form.requirementsText.split('\n').map((item) => item.trim()).filter(Boolean),
+    perks: form.perksText.split('\n').map((item) => item.trim()).filter(Boolean),
   }
   delete payload.skillTagsText
+  delete payload.dutiesText
+  delete payload.requirementsText
+  delete payload.perksText
   await companyApi.createJob(payload)
   dialogVisible.value = false
   ElMessage.success('职位已提交审核')
   load()
 }
 
-onMounted(load)
+onMounted(async () => {
+  const [tree] = await Promise.all([jobApi.categories(), load()])
+  categories.value = tree.flatMap((item) => item.children || [])
+  form.categoryId = categories.value[0]?.id ?? null
+})
 </script>
 
 <template>
@@ -107,6 +118,11 @@ onMounted(load)
       <el-form label-position="top">
         <el-form-item label="职位名称"><el-input v-model="form.title" /></el-form-item>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+          <el-form-item label="职位分类">
+            <el-select v-model="form.categoryId" style="width: 100%">
+              <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="工作城市"><el-input v-model="form.city" /></el-form-item>
           <el-form-item label="学历要求">
             <el-select v-model="form.education" style="width: 100%">
@@ -120,6 +136,9 @@ onMounted(load)
         </div>
         <el-form-item label="核心技能标签"><el-input v-model="form.skillTagsText" /></el-form-item>
         <el-form-item label="职位描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="工作职责（每行一条）"><el-input v-model="form.dutiesText" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="任职要求（每行一条）"><el-input v-model="form.requirementsText" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="职位福利（每行一条）"><el-input v-model="form.perksText" type="textarea" :rows="2" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>

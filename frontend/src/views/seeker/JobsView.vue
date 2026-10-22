@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import PageHead from '../../components/PageHead.vue'
 import JobCard from '../../components/JobCard.vue'
 import { applicationApi, jobApi } from '../../api/index.js'
+import { getDefaultResumeId } from '../../utils/resume.js'
 
 const filters = reactive({
   keyword: '',
@@ -15,6 +16,7 @@ const filters = reactive({
 })
 
 const jobs = ref([])
+const resumeId = ref(null)
 const loading = ref(false)
 
 async function search() {
@@ -33,15 +35,24 @@ function reset() {
 }
 
 async function apply(job) {
+  if (!resumeId.value) {
+    ElMessage.warning('请先创建在线简历')
+    return
+  }
   try {
-    await applicationApi.create({ jobId: job.id, resumeId: 30001 })
+    await applicationApi.create({ jobId: job.id, resumeId: resumeId.value })
     ElMessage.success('投递成功')
   } catch (error) {
     ElMessage.error(error.message || '投递失败')
   }
 }
 
-onMounted(search)
+onMounted(async () => {
+  await Promise.all([
+    search(),
+    getDefaultResumeId().then((id) => { resumeId.value = id }),
+  ])
+})
 </script>
 
 <template>

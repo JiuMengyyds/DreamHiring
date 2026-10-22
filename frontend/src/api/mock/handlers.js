@@ -405,10 +405,32 @@ export function handleMockRequest(config) {
     return ok(paginate(db.companies, query.page, query.size))
   }
 
+  if (path.startsWith('/api/admin/companies/')) {
+    const check = requireRole(config, ['ADMIN'])
+    if (check.error) return check.error
+    const company = db.companies.find((item) => item.id === Number(segment(3)))
+    if (!company) return fail(404, '企业不存在或已删除')
+    if (path.endsWith('/audit') && method === 'put') {
+      if (!['APPROVED', 'REJECTED'].includes(body.auditStatus)) return fail(422, '企业审核仅支持通过或驳回')
+      if (body.auditStatus === 'REJECTED' && !String(body.reason || '').trim()) return fail(422, '驳回时必须填写原因')
+      company.auditStatus = body.auditStatus
+      company.auditReason = body.reason || ''
+      return ok(company)
+    }
+    if (method === 'get') return ok(company)
+  }
+
   if (path === '/api/admin/jobs' && method === 'get') {
     const check = requireRole(config, ['ADMIN'])
     if (check.error) return check.error
     return ok(paginate(db.companyJobs, query.page, query.size))
+  }
+
+  if (path.startsWith('/api/admin/jobs/') && method === 'get') {
+    const check = requireRole(config, ['ADMIN'])
+    if (check.error) return check.error
+    const job = db.companyJobs.find((item) => item.id === Number(segment(3)))
+    return job ? ok(job) : fail(404, '职位不存在或已删除')
   }
 
   if (path.startsWith('/api/admin/jobs/') && path.endsWith('/audit') && method === 'put') {
