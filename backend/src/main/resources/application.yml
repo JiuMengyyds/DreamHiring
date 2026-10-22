@@ -1,5 +1,6 @@
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -43,3 +44,9 @@ app:
     mode: ${STORAGE_MODE:oss}
   messaging:
     mode: ${MESSAGING_MODE:rabbit}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    window-seconds: 60
+    captcha-limit: 30
+    login-limit: 10
+    register-limit: 5

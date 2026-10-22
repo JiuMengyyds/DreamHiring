@@ -41,3 +41,5 @@ app:
     mode: stub
   messaging:
     mode: local
+  rate-limit:
+    enabled: false

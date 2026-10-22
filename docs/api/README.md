@@ -80,6 +80,20 @@ Content-Type: application/json
 - 技能标签、福利标签等列表字段统一使用 JSON 字符串数组。
 - 密码字段只允许写入，任何响应都不得返回密码或密码摘要。
 
+### 2.4 认证接口限流
+
+验证码、登录和注册按客户端 IP 使用 60 秒固定窗口限流：
+
+| 接口 | 默认上限 |
+|---|---:|
+| `POST /api/auth/captcha` | 30 次/分钟 |
+| `POST /api/auth/login` | 10 次/分钟 |
+| `POST /api/auth/register` | 5 次/分钟 |
+
+- 超限返回 HTTP `429`，响应体 `code=429`。
+- 响应头包含 `Retry-After`、`X-RateLimit-Limit` 和 `X-RateLimit-Remaining`。
+- Redis 可用时使用 Redis 计数；Redis 故障时回退到单实例内存计数，避免认证入口失去基本保护。
+
 ## 3. 角色与权限
 
 | 角色 | 枚举值 | 核心权限 |

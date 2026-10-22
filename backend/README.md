@@ -60,6 +60,7 @@ mvn -Dtest=MySqlSmokeTest test
 - 站内消息使用唯一幂等键，避免 RabbitMQ 重复消费产生重复通知。
 - 文件按文件头识别真实类型；OSS 只保存对象键，数据库不保存临时签名 URL。
 - 所有非 GET API 通过 AOP 写入操作日志。
+- 验证码、登录和注册按 IP 使用 Redis 固定窗口限流，Redis 故障时回退到内存计数。
 
 ## 接口
 
