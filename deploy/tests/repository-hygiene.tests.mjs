@@ -51,6 +51,14 @@ test("原始分析数据仅放行指定文件", () => {
   assert.equal(isIgnored("data/raw/其他数据.csv"), true, "其他原始数据仍应被忽略");
 });
 
+test("已删除的面试文档不再进入版本库", () => {
+  assert.equal(
+    isTracked("docs/interview/DreamHiring-java-interview-review.md"),
+    false,
+    "面试文档删除后不应继续被跟踪",
+  );
+});
+
 test("根目录 README 提供完整的项目入口", async () => {
   const readmePath = path.join(projectRoot, "README.md");
   const readme = await readFile(readmePath, "utf8");
