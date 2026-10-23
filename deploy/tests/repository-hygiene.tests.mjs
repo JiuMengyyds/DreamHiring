@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -48,4 +49,33 @@ test("原始分析数据仅放行指定文件", () => {
   assert.equal(isIgnored("data/raw/数据分析.csv"), false, "指定数据集应可提交");
   assert.equal(isTracked("data/raw/数据分析.csv"), true, "指定数据集应进入版本库");
   assert.equal(isIgnored("data/raw/其他数据.csv"), true, "其他原始数据仍应被忽略");
+});
+
+test("根目录 README 提供完整的项目入口", async () => {
+  const readmePath = path.join(projectRoot, "README.md");
+  const readme = await readFile(readmePath, "utf8");
+
+  for (const section of [
+    "## 功能概览",
+    "## 技术架构",
+    "## 快速开始",
+    "## 测试",
+    "## 接口文档",
+    "## 部署",
+    "## 数据与许可",
+  ]) {
+    assert.ok(readme.includes(section), `README 缺少章节：${section}`);
+  }
+
+  for (const relativePath of [
+    "backend/README.md",
+    "frontend/README.md",
+    "docs/api/README.md",
+    "docs/api/openapi.json",
+    "deploy/README.md",
+    "backend/analysis/sources/tianchi-163746.md",
+  ]) {
+    await access(path.join(projectRoot, relativePath));
+    assert.ok(readme.includes(`](${relativePath})`), `README 缺少链接：${relativePath}`);
+  }
 });
